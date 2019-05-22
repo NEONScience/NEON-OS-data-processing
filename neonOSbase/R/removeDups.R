@@ -63,6 +63,12 @@ removeDups <- function(data, variables, table) {
   if(length(unique(data$uid)) != length(data$uid)) {
 
     # check if entire records are duplicates
+    if(length(which(duplicated(data)))==length(which(duplicated(data$uid)))) {
+      data <- data[-which(duplicated(data$uid)),]
+      cat("Data contain identical records with identical uid. This indicates data have been combined from multiple downloads. Duplicate records have been removed.\n\n")
+    } else {
+      stop("Data contain records with identical uid but differing data values. This indicates data have been combined from multiple downloads, and data were reprocessed between downloads.\nStart over with a clean download of the current data.")
+    }
     
   }
   
