@@ -31,7 +31,7 @@
 "NEON.DOM.SITE.DP1.10014.001","cdw_densitydisk",,,,
 "NEON.DOM.SITE.DP1.10014.001","cdw_densitylog","cdw_densitydisk","sampleID","sampleID","Y"
 "NEON.DOM.SITE.DP1.10017.001","dhp_perimagefile",,,,
-"NEON.DOM.SITE.DP1.10017.001","dhp_perplot","dhp_perimagefile",
+"NEON.DOM.SITE.DP1.10017.001","dhp_perplot","dhp_perimagefile","sampleID","sampleID","Y"
 "NEON.DOM.SITE.DP1.10020.001","bet_BOLDcollectionData",,
 "NEON.DOM.SITE.DP1.10020.001","bet_BOLDspecimenDetails",,
 "NEON.DOM.SITE.DP1.10020.001","bet_BOLDtaxonomy",,
