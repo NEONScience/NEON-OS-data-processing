@@ -32,24 +32,24 @@
 "NEON.DOM.SITE.DP1.10014.001","cdw_densitylog","cdw_densitydisk","sampleID","sampleID","Y"
 "NEON.DOM.SITE.DP1.10017.001","dhp_perimagefile",,,,
 "NEON.DOM.SITE.DP1.10017.001","dhp_perplot","dhp_perimagefile","sampleID","sampleID","Y"
-"NEON.DOM.SITE.DP1.10020.001","bet_BOLDcollectionData",,
-"NEON.DOM.SITE.DP1.10020.001","bet_BOLDspecimenDetails",,
-"NEON.DOM.SITE.DP1.10020.001","bet_BOLDtaxonomy",,
-"NEON.DOM.SITE.DP1.10020.001","bet_BOLDvoucherInfo",,
-"NEON.DOM.SITE.DP1.10022.001","bet_archivepooling",,
-"NEON.DOM.SITE.DP1.10022.001","bet_expertTaxonomistIDProcessed",,
-"NEON.DOM.SITE.DP1.10022.001","bet_expertTaxonomistIDRaw",,
-"NEON.DOM.SITE.DP1.10022.001","bet_fielddata","bet_sorting",
-"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_BOLDcollectionData",
-"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_BOLDspecimenDetails",
-"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_BOLDtaxonomy",
-"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_BOLDvoucherInfo",
-"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_expertTaxonomistIDRaw",
-"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_expertTaxonomistIDProcessed",
-"NEON.DOM.SITE.DP1.10022.001","bet_sorting","bet_parataxonomistID",
-"NEON.DOM.SITE.DP1.10022.001","bet_sorting","bet_archivepooling",
-"NEON.DOM.SITE.DP1.10023.001","hbp_massdata",,
-"NEON.DOM.SITE.DP1.10023.001","hbp_perbout","hbp_massdata",
+"NEON.DOM.SITE.DP1.10020.001","bet_BOLDcollectionData",,,,
+"NEON.DOM.SITE.DP1.10020.001","bet_BOLDspecimenDetails",,,,
+"NEON.DOM.SITE.DP1.10020.001","bet_BOLDtaxonomy",,,,
+"NEON.DOM.SITE.DP1.10020.001","bet_BOLDvoucherInfo",,,,
+"NEON.DOM.SITE.DP1.10022.001","bet_archivepooling",,,,
+"NEON.DOM.SITE.DP1.10022.001","bet_expertTaxonomistIDProcessed",,,,
+"NEON.DOM.SITE.DP1.10022.001","bet_expertTaxonomistIDRaw",,,,
+"NEON.DOM.SITE.DP1.10022.001","bet_fielddata","bet_sorting","sampleID","sampleID","Y"
+"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_BOLDcollectionData","","","These all link on geneticSampleID; created in barcoding table. Does the tag match something in parataxonomist?"
+"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_BOLDspecimenDetails","","","These all link on geneticSampleID; created in barcoding table. Does the tag match something in parataxonomist?"
+"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_BOLDtaxonomy","","","These all link on geneticSampleID; created in barcoding table. Does the tag match something in parataxonomist?"
+"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_BOLDvoucherInfo","","","These all link on geneticSampleID; created in barcoding table. Does the tag match something in parataxonomist?"
+"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_expertTaxonomistIDRaw","individualID","individualID","Y"
+"NEON.DOM.SITE.DP1.10022.001","bet_parataxonomistID","bet_expertTaxonomistIDProcessed","individualID","individualID","Y"
+"NEON.DOM.SITE.DP1.10022.001","bet_sorting","bet_parataxonomistID","subsampleID","subsampleID","Y"
+"NEON.DOM.SITE.DP1.10022.001","bet_sorting","bet_archivepooling","subsampleID","subsampleID","Y"
+"NEON.DOM.SITE.DP1.10023.001","hbp_massdata",,"sampleID","sampleID","Y"
+"NEON.DOM.SITE.DP1.10023.001","hbp_perbout","hbp_massdata","sampleID","sampleID","Y"
 "NEON.DOM.SITE.DP1.10026.001","cfc_carbonNitrogen",,
 "NEON.DOM.SITE.DP1.10026.001","cfc_chemistrySubsampling","cfc_elements",
 "NEON.DOM.SITE.DP1.10026.001","cfc_chemistrySubsampling","cfc_lignin",
