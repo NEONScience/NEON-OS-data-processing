@@ -67,7 +67,7 @@ removeDups <- function(data, variables, table) {
       data <- data[-which(duplicated(data$uid)),]
       cat("Data contain identical records with identical uid. This indicates data have been combined from multiple downloads. Duplicate records have been removed.\n\n")
     } else {
-      stop("Data contain records with identical uid but differing data values. This indicates data have been combined from multiple downloads, and data were reprocessed between downloads.\nStart over with a clean download of the current data.")
+      stop("Data contain records with identical uid but differing data values. This indicates data have been combined from multiple downloads, and data were reprocessed between downloads.\nStart over with a fresh download of the current data.")
     }
     
   }
@@ -104,7 +104,7 @@ removeDups <- function(data, variables, table) {
   # if no, skip to flagging
   if(nrow(unique(cbind(data.low[,key])))==nrow(data.low)) {
     data <- data
-    cat("No duplicated key values found!")
+    cat("No duplicated key values found!\n")
   } else {
     
     # subset to only the records with duplicate values in the key fields
@@ -208,7 +208,7 @@ removeDups <- function(data, variables, table) {
     cat(ct, " resolveable duplicates merged into matching records\n", length(which(data$duplicateRecordQF==1)), 
         " resolved records flagged with duplicateRecordQF=1\n", 
         length(which(data$duplicateRecordQF==2)), 
-        " unresolveable duplicates flagged with duplicateRecordQF=2", sep="")
+        " unresolveable duplicates flagged with duplicateRecordQF=2\n", sep="")
   }
   # remove key value field and return data
   data <- data[,-which(colnames(data) %in% c("rowid","keyvalue"))]
