@@ -3,13 +3,20 @@
 
 #' @author
 #' Claire Lunch \email{clunch@battelleecology.org}
+#' Eric Sokol \email{esokol@battelleecology.org}
 
 #' @description
 #' NEON observational data may contain duplicates; this function removes exact duplicates, attempts to resolve non-exact duplicates, and flags duplicates that can't be resolved.
 #'
-#' @param data A data frame containing data from a NEON observational data table [data frame]
-#' @param variables The NEON variables file containing metadata about the data table in question [data frame]
-#' @param table The name of the table. Must match one of the table names in 'variables' [character]
+#' @param data For use with removeDups. A data frame containing data from a NEON observational data table [data frame]
+#' @param variables For use with removeDups. The NEON variables file containing metadata about the data table in question [data frame]
+#' @param table For use with removeDups. The name of the table. Must match one of the table names in 'variables' [character]
+#' @param tab For use with removeDups.L1(). Name of table for which to get data, in the form DP#.#####.001:table_name_in. Defaults to NA, # [character]
+#' @param L1Data For use with removeDups.L1(). L1 data, a data.frame or tibble
+#' @param pubWB For use with removeDups.L1(). Pub workbook, a data.frame or tibble. 
+#' @param tableName For use with removeDups.L1(). A pub table name [character]
+#' @param stack For use with removeDups.L1(). Stack to query if using restR. Can be one of 'int','cert', or 'prod'. Defaults to 'prod'
+#' @param ... For use with removeDups.L1(). Other options passed to restR::get.os.l1.by.tab.all.opts(), use ?restR::get.os.l1.by.tab.all.opts for argument descriptions
 
 #' @return A modified data frame with duplicates removed and a flag field added and populated.
 
@@ -18,6 +25,119 @@
 
 #' @references
 #' License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
+#' @examples 
+#' 
+#' \dontrun{
+#'
+#' # using removeDups.L1, example 1 -- 
+#' # pulling L1 data from restR within the function and then checking for dups
+#' 
+#' mam_perplotnight_pub__dups_flagged_ex1 <- removeDups.L1(
+#'   tab = 'DP1.10072.001:mam_perplotnight_pub', 
+#'   tableName = NA, #maps to table #optional
+#'   minStartDate = '2020-01-01',
+#'   maxStartDate = '2020-01-31')
+#' 
+#' 
+#' # using removeDups.L1, example 2 -- 
+#' # sending L1 data to fxn, but pulling pubWB from restR
+#' 
+#' # get L1 data
+#' my_L1_data <- restR::get.os.l1.by.tab.all.opts(
+#'   tab = 'DP1.10072.001:mam_perplotnight_pub',
+#'   inclSamples = 'true',
+#'   minStartDate = '2020-01-01',
+#'   maxStartDate = '2020-01-31')
+#' 
+#' # send L1 data to dup check function, get putwb using restR
+#' mam_perplotnight_pub__dups_flagged_ex2 <- removeDups.L1(
+#'   tab = 'DP1.10072.001:mam_perplotnight_pub', 
+#'   L1Data = my_L1_data) 
+#' 
+#' 
+#' # using removeDups.L1, example 3 -- 
+#' # sending L1 data and pub wb to fxn, using tab argument
+#' 
+#' # get L1 data
+#' my_L1_data <- restR::get.os.l1.by.tab.all.opts(
+#'   tab = 'DP1.10072.001:mam_perplotnight_pub',
+#'   inclSamples = 'true',
+#'   minStartDate = '2020-01-01',
+#'   maxStartDate = '2020-01-31')
+#' 
+#' # get pubWB
+#' my_pubWB <- restR::get.pub.workbook(
+#'   DPID = 'DP1.10072.001', 
+#'   table = 'mam_perplotnight_pub', 
+#'   stack = 'prod')
+#'  
+#' # send L1 data to dup check function, get putwb using restR
+#' mam_perplotnight_pub__dups_flagged_ex3 <- removeDups.L1(
+#'   tab = 'DP1.10072.001:mam_perplotnight_pub', 
+#'   pubWB = my_pubWB,
+#'   L1Data = my_L1_data) 
+#' 
+#' 
+#' # using removeDups.L1, example 4 -- 
+#' # sending L1 data and pub wb to fxn, using tableName argument
+#' 
+#' # get L1 data
+#' my_L1_data <- restR::get.os.l1.by.tab.all.opts(
+#'   tab = 'DP1.10072.001:mam_perplotnight_pub',
+#'   inclSamples = 'true',
+#'   minStartDate = '2020-01-01',
+#'   maxStartDate = '2020-01-31')
+#' 
+#' # get pubWB
+#' my_pubWB <- restR::get.pub.workbook(
+#'   DPID = 'DP1.10072.001', 
+#'   table = 'mam_perplotnight_pub', 
+#'   stack = 'prod')
+#' 
+#' # send L1 data to dup check function, get putwb using restR
+#' mam_perplotnight_pub__dups_flagged_ex4 <- removeDups.L1(
+#'   tableName = 'mam_perplotnight_pub',
+#'   pubWB = my_pubWB,
+#'   L1Data = my_L1_data) 
+#' 
+#' 
+#' # using removeDups.L1, example 5 -- 
+#' # should error out, you need to send either 'tab' or 'tableName'
+#' 
+#' # get L1 data
+#' my_L1_data <- restR::get.os.l1.by.tab.all.opts(
+#'   tab = 'DP1.10072.001:mam_perplotnight_pub',
+#'   inclSamples = 'true',
+#'   minStartDate = '2020-01-01',
+#'   maxStartDate = '2020-01-31')
+#' 
+#' # get pubWB
+#' my_pubWB <- restR::get.pub.workbook(
+#'   DPID = 'DP1.10072.001', 
+#'   table = 'mam_perplotnight_pub', 
+#'   stack = 'prod')
+#' 
+#' # send L1 data to dup check function, get putwb using restR
+#' mam_perplotnight_pub__dups_flagged_ex5 <- removeDups.L1(
+#'   pubWB = my_pubWB,
+#'   L1Data = my_L1_data) 
+#' 
+#' 
+#' # using removeDups.L1, example 5 -- 
+#' # should error out, you need to send arguments to get L1 data or L1Data
+#' 
+#' # get pubWB
+#' my_pubWB <- restR::get.pub.workbook(
+#'   DPID = 'DP1.10072.001', 
+#'   table = 'mam_perplotnight_pub', 
+#'   stack = 'prod')
+#' 
+#' # send L1 data to dup check function, get putwb using restR
+#' mam_perplotnight_pub__dups_flagged_ex6 <- removeDups.L1(
+#'   tableName = 'mam_perplotnight_pub',
+#'   pubWB = my_pubWB) 
+#' #' 
+#' }#END DONTRUN
 
 #' @export
 
@@ -26,6 +146,8 @@
 #     developed based on functionality written by
 #   Natalie Robinson (2015-06-02)
 #   Sarah Elmendorf (2015-08-19)
+#   Eric Sokol (2020-04-10) - added wrapper function to get L1 data
+#     and pubWB from PDR API using restR package
 ##############################################################################################
 
 removeDups <- function(data, variables, table) {
@@ -220,38 +342,20 @@ removeDups <- function(data, variables, table) {
 
 
 
-my_tab <- 'DP1.10072.001:mam_perplotnight_pub'
-my_table <- 'mam_perplotnight_pub'
-my_dpid <- 'DP1.10072.001'
-my_site_id <- 'SJER'
-my_start_date <- '2020-01-01'
-my_end_date <- '2020-01-31'
-
-
-
-tab = my_tab
-L1data = data.frame() #a data frame, #optional
-pubWB = data.frame() #maps to variables, #optional
-tableName = NA
-stack = 'prod'
-
-my_other_args = list(... = list(
-  minStartDate = my_start_date,
-  maxStartDate = my_end_date,
-  inclSamples = 'true'))
-
 #' @describeIn removeDups method to work with L1 data from PDR
 #' @export
 removeDups.L1 <- function(
   tab = NA, #Name of table for which to get data, in the form DP#.#####.001:table_name_in. [character]
-  L1data = data.frame(), #a data frame, #optional
+  L1Data = data.frame(), #a data frame, #optional
   pubWB = data.frame(), #maps to variables, #optional
   tableName = NA, #maps to table #optional
   stack = 'prod', #can be one of 'int','cert','prod'
   ... #other options passed to get.os.l1.by.tab.all.opts, see ?restR::get.os.l1.by.tab.all.opts
   ){
   
+  
   # extract DPID and tableName if tab is provided
+  
   if(!is.na(tab)){
     tab_elements <- unlist(strsplit(tab, split = ':', fixed = TRUE))
     DPID <- tab_elements[1]
@@ -265,21 +369,56 @@ removeDups.L1 <- function(
     pubWB <- restR::get.pub.workbook(DPID = DPID, table = tableName, stack = stack)
   }
   
+  
   # if no L1 data provided, get L1 data using restR
-  # L1data <- restR::get.os.l1.by.tab.all.opts(
-  #   tab = tab,
-  #   ...
-  # )
   
-  # for testing
-  L1data <- restR::get.os.l1.by.tab.all.opts(
-    tab = tab,
-    # arguments to be passed with ...
-    minStartDate = my_start_date,
-    maxStartDate = my_end_date,
-    inclSamples = 'true')
-  
+  if(nrow(L1Data)==0){
+    
+    if(is.na(tab)){
+      stop("Please provide 'L1Data' or arguments to get L1 data from restR.\nsee help files for getting L1 data using '?restR::get.os.l1.by.tab.all.opts'")
+    }else{
+      L1Data <- restR::get.os.l1.by.tab.all.opts(
+        tab = tab,
+        ...)
+    }
+    
+    # # for testing
+    # L1Data <- restR::get.os.l1.by.tab.all.opts(
+    #   tab = tab,
+    #   # arguments to be passed with ...
+    #   minStartDate = my_start_date,
+    #   maxStartDate = my_end_date,
+    #   inclSamples = 'true')
+  }
   
 
+  # get required pubWB fieldnames
   
+  required_pub_field_names <- pubWB %>% 
+    dplyr::filter(table == tableName, downloadPkg != 'none') %>%
+    dplyr::select(fieldName) %>%
+    unlist(use.names = FALSE)
+  
+  
+  # get L1 column names
+  
+  L1names <- names(L1Data)
+  
+  
+  # filter out fields that bork the function
+  
+  L1DataFormatted <- L1Data[,L1names %>% dplyr::intersect(required_pub_field_names)]
+  
+  
+  # do dupe check
+  
+  out <- neonOSbase::removeDups(
+    data = L1DataFormatted,
+    variables = pubWB, 
+    table = tableName)
+  
+  
+  # return output from removeDups fxn
+  
+  return(out)
 }
