@@ -11,10 +11,10 @@
 #' @param variables The NEON variables file containing metadata about the data table in question [data frame]
 #' @param table The name of the table. Must match one of the table names in 'variables' [character]
 
-#' @return A modified data frame with duplicates removed and a flag field added and populated.
+#' @return A modified data frame with resolveable duplicates removed and a flag field added and populated.
 
 #' @details 
-#' Duplicates are identified based on exact matches in the values of the primary key. For records with identical keys, these steps are followed, in order: (1) If records are identical except for NA or empty string values, the non-NA values are kept. (2) If records are identical except for uid, remarks, and/or personnel (xxxxBy) fields, unique values are concatenated within each field, and the merged version is kept. (3) For records that are identical following steps 1 and 2, one record is kept and flagged with duplicateRecordQF=1. (4) Records that can't be resoved by steps 1-3 are flagged with duplicateRecordQF=2. Note that in a set of three or more duplicates, some records may be resolveable and some may not; if two or more records are left after steps 1-3, all remaining records are flagged with duplicateRecordQF=2. 
+#' Duplicates are identified based on exact matches in the values of the primary key. For records with identical keys, these steps are followed, in order: (1) If records are identical except for NA or empty string values, the non-empty values are kept. (2) If records are identical except for uid, remarks, and/or personnel (xxxxBy) fields, unique values are concatenated within each field, and the merged version is kept. (3) For records that are identical following steps 1 and 2, one record is kept and flagged with duplicateRecordQF=1. (4) Records that can't be resolved by steps 1-3 are flagged with duplicateRecordQF=2. Note that in a set of three or more duplicates, some records may be resolveable and some may not; if two or more records are left after steps 1-3, all remaining records are flagged with duplicateRecordQF=2. 
 
 #' @references
 #' License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
@@ -48,9 +48,25 @@ removeDups <- function(data, variables, table) {
   }
   
   # check field names
-  if(!all(names(data) %in% variables$fieldName[which(variables$table==table)]) |
-     !all(variables$fieldName[which(variables$table==table)] %in% names(data))) {
-    stop("Field names in data do not match variables file.")
+  varnames <- variables$fieldName[which(variables$table==table)]
+  if(!all(names(data) %in% varnames) |
+     !all(varnames %in% names(data))) {
+    dif <- setdiff(varnames, names(data))
+    if(length(dif)!=0) {
+      if(all(dif %in% variables$fieldName[which(variables$downloadPkg=="expanded" & 
+                                            variables$table==table)])) {
+        stop("Input data appear to be the basic download package. The expanded data package is required for removeDups() to identify all duplicates correctly.")
+      }
+    }
+    stop(paste("Field names in data do not match variables file.\n",
+               paste0(setdiff(names(data), varnames), collapse=" "), 
+               ifelse(length(setdiff(names(data), varnames))>0, 
+                      " are in data and not in variables file;\n",
+                      ""), 
+               paste0(setdiff(varnames, names(data)), collapse=" "), 
+               ifelse(length(setdiff(varnames, names(data)))>0,
+                      " are in variables file and not in data.",
+                      ""), sep=""))
     }
   
   # get primary key
@@ -65,9 +81,9 @@ removeDups <- function(data, variables, table) {
     # check if entire records are duplicates
     if(length(which(duplicated(data)))==length(which(duplicated(data$uid)))) {
       data <- data[-which(duplicated(data$uid)),]
-      cat("Data contain identical records with identical uid. This indicates data have been combined from multiple downloads. Duplicate records have been removed.\n\n")
+      cat("Data contain identical records with identical uid. This indicates data have been combined from multiple downloads. Duplicate records have been removed.\n")
     } else {
-      stop("Data contain records with identical uid but differing data values. This indicates data have been combined from multiple downloads, and data were reprocessed between downloads.\nStart over with a fresh download of the current data.")
+      stop("Data contain records with identical uid but differing data values. This indicates something has gone wrong with the data post-download.\nStart over with a fresh download of the current data.")
     }
     
   }
