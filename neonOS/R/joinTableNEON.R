@@ -43,12 +43,17 @@ joinTableNEON <- function(table1, table2,
   table2 <- as.data.frame(table2, stringsAsFactors=F)
   
   # get table joining tables (TJT) from NEON-quick-start-guides
-  # this doesn't work, just a starting place
-  req <- httr::GET("https://api.github.com/repos/NEONScience/NEON-utilities")
-  filelist <- unlist(lapply(httr::content(req)$tree, "[", "path"), use.names = F)
+  #tjt <- read.csv("https://github.com/NEONScience/NEON-quick-start-guides/blob/main/allTableJoins.csv")
+  # temporary method
+  tjt <- read.csv("/Users/clunch/GitHub/NEON-quick-start-guides/allTableJoins.csv")
   
   # check that both tables appear in TJT
-  
+  nt <- setdiff(c(name1, name2), c(tjt$Table1, tjt$Table2))
+  if(length(nt)>0) {
+    stop(paste("Table names", paste(nt, collapse=" and "), "not found in quick start guides."))
+  }
+
   # check that the two tables appear together
+  # and check if they both join to a third table via the same field?
   
 }
