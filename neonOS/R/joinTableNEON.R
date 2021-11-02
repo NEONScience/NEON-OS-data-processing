@@ -43,17 +43,58 @@ joinTableNEON <- function(table1, table2,
   table2 <- as.data.frame(table2, stringsAsFactors=F)
   
   # get table joining tables (TJT) from NEON-quick-start-guides
-  #tjt <- read.csv("https://github.com/NEONScience/NEON-quick-start-guides/blob/main/allTableJoins.csv")
+  #tjt <- utils::read.csv("https://github.com/NEONScience/NEON-quick-start-guides/blob/main/allTableJoins.csv")
   # temporary method
-  tjt <- read.csv("/Users/clunch/GitHub/NEON-quick-start-guides/allTableJoins.csv")
+  tjt <- utils::read.csv("/Users/clunch/GitHub/NEON-quick-start-guides/allTableJoins.csv")
   
   # check that both tables appear in TJT
-  nt <- setdiff(c(name1, name2), c(tjt$Table1, tjt$Table2))
+  nt <- base::setdiff(c(name1, name2), c(tjt$Table1, tjt$Table2))
   if(length(nt)>0) {
     stop(paste("Table names", paste(nt, collapse=" and "), "not found in quick start guides."))
   }
 
-  # check that the two tables appear together
-  # and check if they both join to a third table via the same field?
+  # check that the two tables appear together, and get the linking variables
+  # and check if they both join to a third table via the same field? not yet implemented
+  ind1 <- union(which(tjt$Table1==name1), which(tjt$Table2==name1))
+  ind2 <- union(which(tjt$Table1==name2), which(tjt$Table2==name2))
+  ind <- intersect(ind1,ind2)
+  if(length(ind)==0) {
+    stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
+  }
+  if(length(ind)>1) {
+    lnk <- unique(tjt[ind,])
+    if(nrow(lnk)>1) {
+      stop(paste("Multiple entries found for tables", name1, "and", name2, "; linking variables do not match. This is a metadata error, please notify NEON using the Contact Us page."))
+    }
+  } else {
+    lnk <- tjt[ind,]
+  }
+  
+  # match up table1 and table2
+  if(name1==lnk$Table1) {
+    table1 <- table1
+  } else {
+    temp <- table2
+    table2 <- table1
+    table1 <- temp
+  }
+  
+  # check that linking variables are fields in the two tables
+  lnk1 <- base::trimws(unlist(base::strsplit(lnk$JoinByTable1, split=",")))
+  lnk2 <- base::trimws(unlist(base::strsplit(lnk$JoinByTable2, split=",")))
+
+  nl1 <- base::setdiff(lnk1, names(table1))
+  nl2 <- base::setdiff(lnk2, names(table2))
+  
+  if(length(c(nl1, nl2))>0) {
+    if(length(grep("automatable", c(nl1, nl2)))>0) {
+      stop("Tables", name1, "and", name2, "can't be joined automatically. Consult quick start guide for details.")
+    } else {
+      stop(paste("Linking variables", paste(unique(c(nl1, nl2)), collapse=" and "), "not found in data tables. Check quick start guides and check data table inputs."))
+    }
+  }
+  
+  mergetable <- base::merge(table1, table2, by.x=lnk1, by.y=lnk2, all=TRUE)
+  return(mergetable)
   
 }
