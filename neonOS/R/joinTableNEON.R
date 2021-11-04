@@ -55,14 +55,14 @@ joinTableNEON <- function(table1, table2,
 
   # check that the two tables appear together, and get the linking variables
   # and check if they both join to a third table via the same field? not yet implemented
-  ind1 <- union(which(tjt$Table1==name1), which(tjt$Table2==name1))
-  ind2 <- union(which(tjt$Table1==name2), which(tjt$Table2==name2))
-  ind <- intersect(ind1,ind2)
+  ind1 <- base::union(which(tjt$Table1==name1), which(tjt$Table2==name1))
+  ind2 <- base::union(which(tjt$Table1==name2), which(tjt$Table2==name2))
+  ind <- base::intersect(ind1,ind2)
   if(length(ind)==0) {
     stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
   }
   if(length(ind)>1) {
-    lnk <- unique(tjt[ind,])
+    lnk <- base::unique(tjt[ind,])
     if(nrow(lnk)>1) {
       stop(paste("Multiple entries found for tables", name1, "and", name2, "; linking variables do not match. This is a metadata error, please notify NEON using the Contact Us page."))
     }
@@ -94,6 +94,17 @@ joinTableNEON <- function(table1, table2,
     }
   }
   
+  # if sample IDs are in the join list, include the corresponding barcodes
+  if(length(grep("ID", lnk1))>0) {
+    lnk1t <- unique(c(lnk1, gsub("ID", "Code", lnk1)))
+    lnk1 <- base::setequal(lnk1t, names(table1))
+  }
+  if(length(grep("ID", lnk2))>0) {
+    lnk2t <- unique(c(lnk2, gsub("ID", "Code", lnk2)))
+    lnk2 <- base::setequal(lnk2t, names(table2))
+  }
+  
+  # Join tables!
   mergetable <- base::merge(table1, table2, by.x=lnk1, by.y=lnk2, all=TRUE)
   return(mergetable)
   
