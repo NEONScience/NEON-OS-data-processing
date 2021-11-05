@@ -4,7 +4,13 @@
 \alias{joinTableNEON}
 \title{Join two data tables from NEON Observational System}
 \usage{
-joinTableNEON(table1, table2, name1 = NA_character_, name2 = NA_character_)
+joinTableNEON(
+  table1,
+  table2,
+  name1 = NA_character_,
+  name2 = NA_character_,
+  location.fields = TRUE
+)
 }
 \arguments{
 \item{table1}{A data frame containing data from a NEON observational data table [data frame]}
@@ -14,6 +20,8 @@ joinTableNEON(table1, table2, name1 = NA_character_, name2 = NA_character_)
 \item{name1}{The name of the first table. Defaults to the object name of table1. [character]}
 
 \item{name2}{The name of the second table. Defaults to the object name of table2. [character]}
+
+\item{location.fields}{Should standard location fields be included in the list of linking variables, to avoid duplicating those fields? Defaults to TRUE. [logical]}
 }
 \value{
 A single data frame created by joining table1 and table2 on the fields identified in the quick start guide.
