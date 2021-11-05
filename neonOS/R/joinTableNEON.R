@@ -11,6 +11,7 @@
 #' @param table2 A second data frame containing data from a NEON observational data table [data frame]
 #' @param name1 The name of the first table. Defaults to the object name of table1. [character]
 #' @param name2 The name of the second table. Defaults to the object name of table2. [character]
+#' @param location.fields Should standard location fields be included in the list of linking variables, to avoid duplicating those fields? Defaults to TRUE. [logical]
 
 #' @return A single data frame created by joining table1 and table2 on the fields identified in the quick start guide.
 
@@ -28,7 +29,8 @@
 
 joinTableNEON <- function(table1, table2, 
                           name1=NA_character_, 
-                          name2=NA_character_) {
+                          name2=NA_character_,
+                          location.fields=TRUE) {
   
   if(is.na(name1)) {
     name1 <- deparse(substitute(table1))
@@ -54,20 +56,35 @@ joinTableNEON <- function(table1, table2,
   }
 
   # check that the two tables appear together, and get the linking variables
-  # and check if they both join to a third table via the same field? not yet implemented
   ind1 <- base::union(which(tjt$Table1==name1), which(tjt$Table2==name1))
   ind2 <- base::union(which(tjt$Table1==name2), which(tjt$Table2==name2))
   ind <- base::intersect(ind1,ind2)
+  
+  # and check if they both join to a third table via the same field(s)
   if(length(ind)==0) {
-    stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
-  }
-  if(length(ind)>1) {
-    lnk <- base::unique(tjt[ind,])
-    if(nrow(lnk)>1) {
-      stop(paste("Multiple entries found for tables", name1, "and", name2, "; linking variables do not match. This is a metadata error, please notify NEON using the Contact Us page."))
+    alltjt <- tjt[union(ind1, ind2),]
+    allt <- base::setdiff(unique(c(alltjt$Table1, alltjt$Table2)), c(name1,name2))
+    indt <- base::union(which(tjt$Table1 %in% allt), which(tjt$Table2 %in% allt))
+    tt1 <- base::intersect(ind1,indt)
+    tt2 <- base::intersect(ind2,indt)
+    # for now, limiting to case where there is a single point of intersection
+    if(length(tt1)==1 & length(tt2)==1 & 
+       all(tjt[tt1,c("JoinByTable1","JoinByTable2")]==tjt[tt2,c("JoinByTable1","JoinByTable2")])) {
+      lnk <- data.frame(matrix(c(name1, name2, tjt$JoinByTable1[tt1], tjt$JoinByTable2[tt1]), nrow=1, ncol=4))
+      colnames(lnk) <- c("Table1","Table2","JoinByTable1","JoinByTable2")
+      message(paste("Tables", name1, "and", name2, "are not directly connected in quick start guides; relationship inferred via a third table. Check results carefully."))
+    } else {
+      stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
     }
   } else {
-    lnk <- tjt[ind,]
+    if(length(ind)>1) {
+      lnk <- base::unique(tjt[ind,])
+      if(nrow(lnk)>1) {
+        stop(paste("Multiple entries found for tables", name1, "and", name2, "; linking variables do not match. This is a metadata error, please notify NEON using the Contact Us page."))
+      }
+    } else {
+      lnk <- tjt[ind,]
+    }
   }
   
   # match up table1 and table2
@@ -97,11 +114,19 @@ joinTableNEON <- function(table1, table2,
   # if sample IDs are in the join list, include the corresponding barcodes
   if(length(grep("ID", lnk1))>0) {
     lnk1t <- unique(c(lnk1, gsub("ID", "Code", lnk1)))
-    lnk1 <- base::setequal(lnk1t, names(table1))
+    lnk1 <- base::intersect(lnk1t, names(table1))
   }
   if(length(grep("ID", lnk2))>0) {
     lnk2t <- unique(c(lnk2, gsub("ID", "Code", lnk2)))
-    lnk2 <- base::setequal(lnk2t, names(table2))
+    lnk2 <- base::intersect(lnk2t, names(table2))
+  }
+  
+  # optionally include basic location fields in the linking variables, to avoid unnecessary column duplication
+  if(location.fields) {
+    lnk1l <- c(lnk1, "domainID", "siteID", "plotID", "locationID", "namedLocation")
+    lnk1 <- base::intersect(lnk1l, names(table1))
+    lnk2l <- c(lnk2, "domainID", "siteID", "plotID", "locationID", "namedLocation")
+    lnk2 <- base::intersect(lnk2l, names(table2))
   }
   
   # Join tables!
