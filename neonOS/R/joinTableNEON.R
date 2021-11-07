@@ -62,17 +62,20 @@ joinTableNEON <- function(table1, table2,
   
   # and check if they both join to a third table via the same field(s)
   if(length(ind)==0) {
-    alltjt <- tjt[union(ind1, ind2),]
+    alltjt <- tjt[base::union(ind1, ind2),]
     allt <- base::setdiff(unique(c(alltjt$Table1, alltjt$Table2)), c(name1,name2))
     indt <- base::union(which(tjt$Table1 %in% allt), which(tjt$Table2 %in% allt))
     tt1 <- base::intersect(ind1,indt)
     tt2 <- base::intersect(ind2,indt)
     # for now, limiting to case where there is a single point of intersection
-    if(length(tt1)==1 & length(tt2)==1 & 
-       all(tjt[tt1,c("JoinByTable1","JoinByTable2")]==tjt[tt2,c("JoinByTable1","JoinByTable2")])) {
-      lnk <- data.frame(matrix(c(name1, name2, tjt$JoinByTable1[tt1], tjt$JoinByTable2[tt1]), nrow=1, ncol=4))
-      colnames(lnk) <- c("Table1","Table2","JoinByTable1","JoinByTable2")
-      message(paste("Tables", name1, "and", name2, "are not directly connected in quick start guides; relationship inferred via a third table. Check results carefully."))
+    if(length(tt1)==1 & length(tt2)==1) {
+      if(all(tjt[tt1,c("JoinByTable1","JoinByTable2")]==tjt[tt2,c("JoinByTable1","JoinByTable2")])) {
+        lnk <- data.frame(matrix(c(name1, name2, tjt$JoinByTable1[tt1], tjt$JoinByTable2[tt1]), nrow=1, ncol=4))
+        colnames(lnk) <- c("Table1","Table2","JoinByTable1","JoinByTable2")
+        message(paste("Tables", name1, "and", name2, "are not directly connected in quick start guides; relationship inferred via a third table. Check results carefully."))
+      } else {
+        stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide, and could not be inferred."))
+      }
     } else {
       stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
     }
