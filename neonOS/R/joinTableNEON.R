@@ -110,7 +110,11 @@ joinTableNEON <- function(table1, table2,
     if(length(grep("automatable", c(nl1, nl2)))>0) {
       stop("Tables", name1, "and", name2, "can't be joined automatically. Consult quick start guide for details.")
     } else {
-      stop(paste("Linking variables", paste(unique(c(nl1, nl2)), collapse=" and "), "not found in data tables. Check quick start guides and check data table inputs."))
+      if(length(grep("recommended", c(nl1, nl2)))>0) {
+        stop("Directly joining tables", name1, "and", name2, "is not recommended. Consult quick start guide for details.")
+      } else {
+        stop(paste("Linking variables", paste(unique(c(nl1, nl2)), collapse=" and "), "not found in data tables. Check quick start guides and check data table inputs."))
+      }
     }
   }
   
