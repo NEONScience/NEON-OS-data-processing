@@ -67,9 +67,20 @@ getSampleTree <- function(sampleNode, idType="tag",
     return()
   } else {
     
-    samp <- jsonlite::fromJSON(httr::content(req, as="text", encoding="UTF-8"), flatten=FALSE)
+    samp <- jsonlite::fromJSON(httr::content(req, as="text", encoding="UTF-8"), simplifyVector=FALSE)
+    sampFoc <- jsonlite::fromJSON(httr::content(req, as="text", encoding="UTF-8"), simplifyVector=TRUE)
+    sampFoc <- sampFoc$data$sampleViews[,!names(sampFoc$data$sampleViews) %in% 
+                                          c("parentSampleIdentifiers",
+                                            "childSampleIdentifiers",
+                                            "sampleEvents")]
     
-    # STOPPED HERE. child sample identifiers output format is not ideal.
+    sampParents <- suppressWarnings(data.table::rbindlist(samp$data$sampleViews[[1]]$parentSampleIdentifiers, fill=T))
+    sampChildren <- suppressWarnings(data.table::rbindlist(samp$data$sampleViews[[1]]$childSampleIdentifiers, fill=T))
+    
+    if(nrow(sampParents)==0) {
+      
+      sampAll <- data.table::rbindlist(list(sampParents, sampFoc, sampChildren))
+    }
     
     loc.children <- loc$data[base::grep('Child', base::names(loc$data))]$locationChildren
     loc.values <- getLocValues(loc, history)
