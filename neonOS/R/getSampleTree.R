@@ -14,6 +14,8 @@
 
 #' @return A table of sample identifiers, their classes, and their parent samples.
 
+#' @export
+
 #' @references
 #' License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
 
@@ -42,6 +44,7 @@ getSampleTree <- function(sampleNode, idType="tag",
         message(paste("Multiple sampleClasses found for tag ", sampleNode, 
                       ". Re-try with one of the valid sampleClasses:", sep=""))
         message(paste(cls, collapse="\n"))
+        return()
       }
     }
   }
@@ -57,6 +60,11 @@ getSampleTree <- function(sampleNode, idType="tag",
       if(idType=="guid") {
         req <- getAPI(paste("http://data.neonscience.org/api/v0/samples/view?archiveGuid=", 
                             sampleNode, sep=""), token=token)
+      } else {
+        if(idType=="uuid") {
+          req <- getAPI(paste("http://data.neonscience.org/api/v0/samples/view?sampleUuid=", 
+                              sampleNode, sep=""), token=token)
+        }
       }
     }
   }
@@ -67,36 +75,30 @@ getSampleTree <- function(sampleNode, idType="tag",
     return()
   } else {
     
-    samp <- jsonlite::fromJSON(httr::content(req, as="text", encoding="UTF-8"), simplifyVector=FALSE)
     sampFoc <- jsonlite::fromJSON(httr::content(req, as="text", encoding="UTF-8"), simplifyVector=TRUE)
-    sampFoc <- sampFoc$data$sampleViews[,!names(sampFoc$data$sampleViews) %in% 
-                                          c("parentSampleIdentifiers",
-                                            "childSampleIdentifiers",
-                                            "sampleEvents")]
+    sampUUID <- sampFoc$data$sampleViews$sampleUuid
     
-    sampParents <- suppressWarnings(data.table::rbindlist(samp$data$sampleViews[[1]]$parentSampleIdentifiers, fill=T))
-    sampChildren <- suppressWarnings(data.table::rbindlist(samp$data$sampleViews[[1]]$childSampleIdentifiers, fill=T))
+    # first get all ancestors, then get descendants of each ancestor
+    parents <- getSampleParents(sampUUID, token=token)
+    descendants <- data.table::rbindlist(lapply(parents$sampleUuid, getSampleChildren, token), fill=TRUE)
+    sampAll <- data.table::rbindlist(list(parents, descendants), fill=TRUE)
     
-    if(nrow(sampParents)==0) {
-      
-      sampAll <- data.table::rbindlist(list(sampParents, sampFoc, sampChildren))
-    }
+    # remove duplicates
+    sampAll <- sampAll[!duplicated(sampAll),]
     
-    loc.children <- loc$data[base::grep('Child', base::names(loc$data))]$locationChildren
-    loc.values <- getLocValues(loc, history)
+    # root samples appear in parent only - give them their own rows
+    rootUuids <- sampAll$parentSampleUuid[!sampAll$parentSampleUuid %in% sampAll$sampleUuid]
+    root <- sampAll[sampAll$parentSampleUuid %in% rootUuids, c("parentSampleUuid",
+                                                               "parentSampleTag",
+                                                               "parentSampleClass",
+                                                               "parentSampleBarcode",
+                                                               "parentSampleArchiveGuid")]
+    names(root) <- c("sampleUuid","sampleTag","sampleClass","barcode","archiveGuid")
     
-    cat('Finding spatial data for', namedLocation, rep('', 50), '\r')
-    utils::flush.console()
+    sampAll <- data.table::rbindlist(list(root, sampAll), fill=TRUE)
+    sampAll <- sampAll[!duplicated(sampAll),]
+    return(sampAll)
     
-    if(length(loc.children)==0) {
-      loc.all <- getLocValues(loc, history)
-      return(loc.all)
-    } else {
-      loc.all <- plyr::rbind.fill(loc.values, 
-                                  data.table::rbindlist(lapply(loc.children, getLocChildren, history), 
-                                                        fill=T))
-      return(loc.all)
-    }
   }
   
 }
