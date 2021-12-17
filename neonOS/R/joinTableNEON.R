@@ -108,7 +108,7 @@ joinTableNEON <- function(table1, table2,
   
   if(length(c(nl1, nl2))>0) {
     if(length(grep("automatable", c(nl1, nl2)))>0) {
-      stop("Tables", name1, "and", name2, "can't be joined automatically. Consult quick start guide for details.")
+      stop("Tables", name1, "and", name2, "can't be joined automatically. Consult quick start guide for details about data relationships.")
     } else {
       if(length(grep("recommended", c(nl1, nl2)))>0) {
         stop("Directly joining tables", name1, "and", name2, "is not recommended. Consult quick start guide for details.")
