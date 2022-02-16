@@ -77,6 +77,9 @@ joinTableNEON <- function(table1, table2,
         stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide, and could not be inferred."))
       }
     } else {
+      if(any(tjt$Table2[which(tjt$Table1==name1)]=="Any other table")) {
+        stop(paste("Direct join of table", name1, "to other tables in the data product is not recommended. Consult quick start guide for more information."))
+      }
       stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
     }
   } else {
