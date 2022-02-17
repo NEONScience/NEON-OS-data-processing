@@ -14,7 +14,7 @@
 #' @return A modified data frame with resolveable duplicates removed and a flag field added and populated.
 
 #' @details 
-#' Duplicates are identified based on exact matches in the values of the primary key. For records with identical keys, these steps are followed, in order: (1) If records are identical except for NA or empty string values, the non-empty values are kept. (2) If records are identical except for uid, remarks, and/or personnel (xxxxBy) fields, unique values are concatenated within each field, and the merged version is kept. (3) For records that are identical following steps 1 and 2, one record is kept and flagged with duplicateRecordQF=1. (4) Records that can't be resolved by steps 1-3 are flagged with duplicateRecordQF=2. Note that in a set of three or more duplicates, some records may be resolveable and some may not; if two or more records are left after steps 1-3, all remaining records are flagged with duplicateRecordQF=2. 
+#' Duplicates are identified based on exact matches in the values of the primary key. For records with identical keys, these steps are followed, in order: (1) If records are identical except for NA or empty string values, the non-empty values are kept. (2) If records are identical except for uid, remarks, and/or personnel (xxxxBy) fields, unique values are concatenated within each field, and the merged version is kept. (3) For records that are identical following steps 1 and 2, one record is kept and flagged with duplicateRecordQF=1. (4) Records that can't be resolved by steps 1-3 are flagged with duplicateRecordQF=2. Note that in a set of three or more duplicates, some records may be resolveable and some may not; if two or more records are left after steps 1-3, all remaining records are flagged with duplicateRecordQF=2.
 
 #' @references
 #' License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
@@ -29,9 +29,6 @@
 ##############################################################################################
 
 removeDups <- function(data, variables, table) {
-  
-  # Initiate messages
-  messages <- NA
   
   # ensure data frames
   variables <- as.data.frame(variables, stringsAsFactors=F)
@@ -81,7 +78,7 @@ removeDups <- function(data, variables, table) {
     # check if entire records are duplicates
     if(length(which(duplicated(data)))==length(which(duplicated(data$uid)))) {
       data <- data[-which(duplicated(data$uid)),]
-      cat("Data contain identical records with identical uid. This indicates data have been combined from multiple downloads. Duplicate records have been removed.\n")
+      cat("Data contain identical records with identical uid. This indicates data have been combined from multiple downloads. Duplicate records have been removed without flagging.\n")
     } else {
       stop("Data contain records with identical uid but differing data values. This indicates something has gone wrong with the data post-download.\nStart over with a fresh download of the current data.")
     }
@@ -114,7 +111,7 @@ removeDups <- function(data, variables, table) {
   data.low <- data.frame(data.low, stringsAsFactors=F)
   
   # convert any empty strings to NAs
-  data.low[data.low==''] <- NA
+  data.low[data.low==""] <- NA
   
   # check and see if there are duplicates of the primary key
   # if no, skip to flagging
@@ -129,10 +126,6 @@ removeDups <- function(data, variables, table) {
     
     # iterate over unique key values
     dup.keys <- cbind(unique(data.sub[,key]))
-    na.check <- apply(dup.keys, 2, FUN=function(x){all(!is.na(x))})
-    if(!all(na.check==T)) {
-      cat("Primary key fields contain NA values and/or empty strings. Results may be unreliable; check input data carefully.\n")
-    }
     cat(nrow(dup.keys), "duplicated key values found, representing",
         nrow(data.sub), "non-unique records. Attempting to resolve.\n")
     pb <- utils::txtProgressBar(style=3)
@@ -140,7 +133,18 @@ removeDups <- function(data, variables, table) {
     ct <- 0
     for(i in 1:nrow(dup.keys)) {
       
-      #print(dup.keys[i,])
+      # check for NA key values
+      if(ncol(dup.keys)==1) {
+        na.check <- dup.keys[i]
+        dup.keyvalue <- dup.keys[i]
+      } else {
+        na.check <- dup.keys[i,]
+        dup.keyvalue <- paste0(dup.keys[i,])
+      }
+      if(all(is.na(na.check))) {
+        data$duplicateRecordQF[which(data$keyvalue %in% dup.keyvalue)] <- -1
+        next
+      }
       
       # subset data to one key value
       if(ncol(dup.keys)==1) {
@@ -210,22 +214,35 @@ removeDups <- function(data, variables, table) {
       utils::setTxtProgressBar(pb, i/nrow(dup.keys))
     }
     
-  }
-  
-  # flag remaining, unresolved duplicates
-  # if some in a group are resolved and some aren't, all end up with QF=2
-  unres.dups <- union(which(duplicated(data$keyvalue)), 
-                      which(duplicated(data$keyvalue, fromLast=T)))
-  data$duplicateRecordQF[unres.dups] <- 2
-  
-  if(nrow(unique(cbind(data.low[,key])))!=nrow(data.low)) {
+    # flag remaining, unresolved duplicates
+    # if some in a group are resolved and some aren't, all end up with QF=2
+    unres.dups <- union(which(duplicated(data$keyvalue)), 
+                        which(duplicated(data$keyvalue, fromLast=T)))
+    if(any(data$duplicateRecordQF==-1)) {
+      unres.dups <- setdiff(unres.dups, which(data$duplicateRecordQF==-1))
+    }
+    data$duplicateRecordQF[unres.dups] <- 2
+    
     utils::setTxtProgressBar(pb, 1)
     close(pb)
-    cat(ct, " resolveable duplicates merged into matching records\n", length(which(data$duplicateRecordQF==1)), 
-        " resolved records flagged with duplicateRecordQF=1\n", 
-        length(which(data$duplicateRecordQF==2)), 
-        " unresolveable duplicates flagged with duplicateRecordQF=2\n", sep="")
+    
+    if(nrow(unique(cbind(data.low[,key])))!=nrow(data.low)) {
+      cat(ct, " resolveable duplicates merged into matching records\n", length(which(data$duplicateRecordQF==1)), 
+          " resolved records flagged with duplicateRecordQF=1\n", sep="")
+    }
+    
+    if(length(which(data$duplicateRecordQF==2))>0) {
+      cat(length(which(data$duplicateRecordQF==2)), 
+          " unresolveable duplicates flagged with duplicateRecordQF=2\n", sep="")
+    }
+    
+    if(length(which(data$duplicateRecordQF==-1))>0) {
+      cat(length(which(data$duplicateRecordQF==-1)), 
+          " records could not be evaluated due to missing primary key values and are flagged with duplicateRecordQF=-1\n", sep="")
+    }
+    
   }
+  
   # remove key value field and return data
   data <- data[,-which(colnames(data) %in% c("rowid","keyvalue"))]
   return(data)
