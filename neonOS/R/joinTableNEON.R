@@ -74,7 +74,7 @@ joinTableNEON <- function(table1, table2,
         colnames(lnk) <- c("Table1","Table2","JoinByTable1","JoinByTable2")
         message(paste("Tables", name1, "and", name2, "are not directly connected in quick start guides; relationship inferred via a third table. Check results carefully."))
       } else {
-        stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide, and could not be inferred."))
+        stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
       }
     } else {
       if(any(tjt$Table2[which(tjt$Table1==name1)]=="Any other table")) {
@@ -111,12 +111,16 @@ joinTableNEON <- function(table1, table2,
   
   if(length(c(nl1, nl2))>0) {
     if(length(grep("automatable", c(nl1, nl2)))>0) {
-      stop("Tables", name1, "and", name2, "can't be joined automatically. Consult quick start guide for details about data relationships.")
+      stop(paste("Tables", name1, "and", name2, "can't be joined automatically. Consult quick start guide for details about data relationships."))
     } else {
       if(length(grep("recommended", c(nl1, nl2)))>0) {
-        stop("Directly joining tables", name1, "and", name2, "is not recommended. Consult quick start guide for details.")
+        stop(paste("Joining tables", name1, "and", name2, "is not recommended. Consult quick start guide for details."))
       } else {
-        stop(paste("Linking variables", paste(unique(c(nl1, nl2)), collapse=" and "), "not found in data tables. Check quick start guides and check data table inputs."))
+        if(length(grep("intermediate", c(nl1, nl2)))>0) {
+          stop(paste("Tables", name1, "and", name2, "can't be joined directly, but can each be joined to a common table(s). Consult quick start guide for details."))
+        } else {
+          stop(paste("Linking variables", paste(unique(c(nl1, nl2)), collapse=" and "), "not found in data tables. Check quick start guides and check data table inputs."))
+        }
       }
     }
   }
