@@ -60,39 +60,26 @@ joinTableNEON <- function(table1, table2,
   ind2 <- base::union(which(tjt$Table1==name2), which(tjt$Table2==name2))
   ind <- base::intersect(ind1,ind2)
   
-  # and check if they both join to a third table via the same field(s)
-  if(length(ind)==0) {
-    alltjt <- tjt[base::union(ind1, ind2),]
-    allt <- base::setdiff(unique(c(alltjt$Table1, alltjt$Table2)), c(name1,name2))
-    indt <- base::union(which(tjt$Table1 %in% allt), which(tjt$Table2 %in% allt))
-    tt1 <- base::intersect(ind1,indt)
-    tt2 <- base::intersect(ind2,indt)
-    # for now, limiting to case where there is a single point of intersection
-    if(length(tt1)==1 & length(tt2)==1) {
-      if(all(tjt[tt1,c("JoinByTable1","JoinByTable2")]==tjt[tt2,c("JoinByTable1","JoinByTable2")])) {
-        lnk <- data.frame(matrix(c(name1, name2, tjt$JoinByTable1[tt1], tjt$JoinByTable2[tt1]), nrow=1, ncol=4))
-        colnames(lnk) <- c("Table1","Table2","JoinByTable1","JoinByTable2")
-        message(paste("Tables", name1, "and", name2, "are not directly connected in quick start guides; relationship inferred via a third table. Check results carefully."))
-      } else {
-        stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
-      }
-    } else {
-      if(any(tjt$Table2[which(tjt$Table1==name1)]=="Any other table")) {
-        stop(paste("Direct join of table", name1, "to table", name2, "is not recommended. Consult quick start guide for more information."))
-      }
-      stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
-    }
+  # if there is one matching entry, use it
+  if(length(ind)==1) {
+    lnk <- tjt[ind,]
   } else {
+    # if there are multiple entries, check that the linking variables match
     if(length(ind)>1) {
       lnk <- base::unique(tjt[ind,])
       if(nrow(lnk)>1) {
         stop(paste("Multiple entries found for tables", name1, "and", name2, "; linking variables do not match. This is a metadata error, please notify NEON using the Contact Us page."))
       }
     } else {
-      lnk <- tjt[ind,]
+      # if there are no entries, decide which error message to display
+      if(any(tjt$Table2[which(tjt$Table1 %in% c(name1, name2))]=="Any other table")) {
+        stop(paste("Direct join of table", name1, "to table", name2, "is not recommended. Consult quick start guide for more information."))
+      } else {
+        stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
+      }
     }
   }
-  
+
   # match up table1 and table2
   if(name1==lnk$Table1) {
     table1 <- table1
@@ -109,6 +96,7 @@ joinTableNEON <- function(table1, table2,
   nl1 <- base::setdiff(lnk1, names(table1))
   nl2 <- base::setdiff(lnk2, names(table2))
   
+  # if linking variables are not present, figure out which error to display
   if(length(c(nl1, nl2))>0) {
     if(length(grep("automatable", c(nl1, nl2)))>0) {
       stop(paste("Tables", name1, "and", name2, "can't be joined automatically. Consult quick start guide for details about data relationships."))
@@ -119,28 +107,35 @@ joinTableNEON <- function(table1, table2,
         if(length(grep("intermediate", c(nl1, nl2)))>0) {
           stop(paste("Tables", name1, "and", name2, "can't be joined directly, but can each be joined to a common table(s). Consult quick start guide for details."))
         } else {
-          stop(paste("Linking variables", paste(unique(c(nl1, nl2)), collapse=" and "), "not found in data tables. Check quick start guides and check data table inputs."))
+          stop(paste("Linking variables", paste(unique(c(nl1, nl2)), collapse=" and "), "not found in one or both data tables. Check quick start guides and check data table inputs."))
         }
       }
     }
   }
   
-  # if sample IDs are in the join list, include the corresponding barcodes
-  if(length(grep("ID", lnk1))>0) {
-    lnk1t <- unique(c(lnk1, gsub("ID", "Code", lnk1)))
-    lnk1 <- base::intersect(lnk1t, names(table1))
-  }
-  if(length(grep("ID", lnk2))>0) {
-    lnk2t <- unique(c(lnk2, gsub("ID", "Code", lnk2)))
-    lnk2 <- base::intersect(lnk2t, names(table2))
+  # if sample IDs are in the join list, include the corresponding barcodes, after verifying
+  # that they are present in both tables
+  # this won't work for samples with different names in the two tables. for now, skip that case
+  if(length(grep("ID", lnk1))>0 & length(grep("ID", lnk2))>0) {
+    if(!identical(grep("ID", lnk1, value=TRUE), grep("ID", lnk2, value=TRUE))) {
+      cat("Linking sample fields do not have the same names; barcodes are not included in the joining variables.\n")
+    } else {
+      codes <- base::union(gsub("ID", "Code", lnk1), gsub("ID", "Code", lnk2))
+      codesp <- base::intersect(base::intersect(codes, names(table1)), 
+                                base::intersect(codes, names(table2)))
+      lnk1 <- base::union(lnk1, codesp)
+      lnk2 <- base::union(lnk2, codesp)
+    }
   }
   
   # optionally include basic location fields in the linking variables, to avoid unnecessary column duplication
+  # only include location fields that are present in both tables
   if(location.fields) {
-    lnk1l <- c(lnk1, "domainID", "siteID", "plotID", "locationID", "namedLocation")
-    lnk1 <- base::intersect(lnk1l, names(table1))
-    lnk2l <- c(lnk2, "domainID", "siteID", "plotID", "locationID", "namedLocation")
-    lnk2 <- base::intersect(lnk2l, names(table2))
+    lf <- c("domainID", "siteID", "plotID", "locationID", "namedLocation")
+    lfp <- base::intersect(base::intersect(lf, names(table1)), 
+                           base::intersect(lf, names(table2)))
+    lnk1 <- base::union(lnk1, lfp)
+    lnk2 <- base::union(lnk2, lfp)
   }
   
   # Join tables!
