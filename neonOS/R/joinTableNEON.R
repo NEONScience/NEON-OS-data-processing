@@ -72,7 +72,7 @@ joinTableNEON <- function(table1, table2,
       }
     } else {
       # if there are no entries, decide which error message to display
-      if(any(tjt$Table2[which(tjt$Table1 %in% c(name1, name2))]=="Any other table")) {
+      if(any(grepl("Any other table", tjt$Table2[which(tjt$Table1 %in% c(name1, name2))]))) {
         stop(paste("Direct join of table", name1, "to table", name2, "is not recommended. Consult quick start guide for more information."))
       } else {
         stop(paste("Variable(s) to join tables", name1, "and", name2, "are not identified in any quick start guide."))
