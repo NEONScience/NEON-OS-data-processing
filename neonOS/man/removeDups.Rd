@@ -4,7 +4,7 @@
 \alias{removeDups}
 \title{Remove duplicates from a data table based on a provided primary key; flag duplicates that can't be removed.}
 \usage{
-removeDups(data, variables, table)
+removeDups(data, variables, table = NA_character_)
 }
 \arguments{
 \item{data}{A data frame containing data from a NEON observational data table [data frame]}
