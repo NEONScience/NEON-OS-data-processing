@@ -28,7 +28,11 @@
 #   Sarah Elmendorf (2015-08-19)
 ##############################################################################################
 
-removeDups <- function(data, variables, table) {
+removeDups <- function(data, variables, table=NA_character_) {
+  
+  if(is.na(table)) {
+    table <- deparse(substitute(data))
+  }
   
   # ensure data frames
   variables <- as.data.frame(variables, stringsAsFactors=F)
@@ -36,7 +40,7 @@ removeDups <- function(data, variables, table) {
   
   # check table matching
   if(length(which(variables$table==table))==0) {
-    stop("Table name does not match any table in variables file.")
+    stop(paste("Table name", table, "does not match any table in variables file."))
   }
   
   # remove fields not published
