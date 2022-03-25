@@ -45,10 +45,13 @@ joinTableNEON <- function(table1, table2,
   table2 <- as.data.frame(table2, stringsAsFactors=F)
   
   # get table joining tables (TJT) from NEON-quick-start-guides
-  #tjt <- utils::read.csv("https://github.com/NEONScience/NEON-quick-start-guides/blob/main/allTableJoins.csv")
-  # temporary method
-  tjt <- utils::read.csv("/Users/clunch/GitHub/NEON-quick-start-guides/allTableJoins.csv")
-  
+  tjt <- tryCatch(utils::read.csv("https://raw.githubusercontent.com/NEONScience/NEON-quick-start-guides/main/allTableJoins.csv"),
+             error=function(e) {return(invisible())}, warning=function(w) {return(invisible())})
+  if(class(tjt)!="data.frame") {
+    message("Could not access quick start guides, using archived version of table joining instructions. Check for updates when you have internet access.")
+    tjt <- table_joins
+  }
+
   # check that both tables appear in TJT
   nt <- base::setdiff(c(name1, name2), c(tjt$Table1, tjt$Table2))
   if(length(nt)>0) {
