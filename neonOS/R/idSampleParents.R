@@ -49,7 +49,8 @@ idSampleParents <- function(sampleUuid, token=NA_character_) {
                                  row.names=NULL))
     names(sampTemp) <- c("parentSampleUuid", "parentSampleTag", "parentSampleClass",
                          "parentSampleBarcode", "parentSampleArchiveGuid")
-    sampAll <- cbind(sampChildren, sampTemp, row.names=NULL)
+    sampChildrenAll <- cbind(sampChildren, sampTemp, row.names=NULL)
+    sampAll <- data.table::rbindlist(list(sampAll, sampChildrenAll), fill=TRUE)
   }
   
   if(nrow(sampParents)==0) {
@@ -61,10 +62,12 @@ idSampleParents <- function(sampleUuid, token=NA_character_) {
     names(sampTemp) <- c("parentSampleUuid", "parentSampleTag", "parentSampleClass",
                          "parentSampleBarcode", "parentSampleArchiveGuid")
     sampParentsAll <- cbind(sampFoc, sampTemp, row.names=NULL)
-    sampAll <- data.table::rbindlist(list(sampAll, sampParentsAll), fill=TRUE)
+    sampParentsOnly <- sampTemp
+    names(sampParentsOnly) <- c("sampleUuid", "sampleTag", "sampleClass",
+                                "barcode", "archiveGuid")
+    sampAll <- data.table::rbindlist(list(sampAll, sampParentsOnly, sampParentsAll), fill=TRUE)
   }
 
-  sampAll <- sampAll[which(!is.na(sampAll$parentSampleUuid)),]
   return(sampAll)
   
 }

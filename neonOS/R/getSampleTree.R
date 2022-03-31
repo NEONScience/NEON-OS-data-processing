@@ -86,17 +86,28 @@ getSampleTree <- function(sampleNode, idType="tag",
     # remove duplicates
     sampAll <- sampAll[!duplicated(sampAll),]
     
-    # root samples appear in parent only - give them their own rows
-    rootUuids <- sampAll$parentSampleUuid[!sampAll$parentSampleUuid %in% sampAll$sampleUuid]
-    root <- sampAll[sampAll$parentSampleUuid %in% rootUuids, c("parentSampleUuid",
-                                                               "parentSampleTag",
-                                                               "parentSampleClass",
-                                                               "parentSampleBarcode",
-                                                               "parentSampleArchiveGuid")]
-    names(root) <- c("sampleUuid","sampleTag","sampleClass","barcode","archiveGuid")
+    # remove parent sample rows without their own parents
+    ind <- numeric()
+    for(i in sort(union(which(duplicated(sampAll$sampleUuid)), 
+                        which(duplicated(sampAll$sampleUuid, fromLast=TRUE))))) {
+      if(!is.na(sampAll$parentSampleUuid[i])) {
+        next
+      }
+      si <- sampAll$sampleUuid[i]
+      if(is.na(sampAll$parentSampleUuid[i])) {
+        if(!all(is.na(sampAll$parentSampleUuid[which(sampAll$sampleUuid==si)]))) {
+          ind <- c(ind, i)
+        }
+      }
+    }
+    if(length(which(is.na(sampAll$sampleUuid)))>0) {
+      ind <- c(ind, which(is.na(sampAll$sampleUuid)))
+    }
+    sampAll <- sampAll[-ind,]
     
-    sampAll <- data.table::rbindlist(list(root, sampAll), fill=TRUE)
-    sampAll <- sampAll[!duplicated(sampAll),]
+    # attempt to order (would be great to improve. this at least puts root samples at the top)
+    sampAll <- sampAll[order(sampAll$parentSampleClass, na.last=FALSE),]
+    
     return(sampAll)
     
   }

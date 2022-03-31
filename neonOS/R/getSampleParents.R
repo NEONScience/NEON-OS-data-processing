@@ -37,7 +37,7 @@ getSampleParents <- function(sampleUuid, token=NA_character_) {
                                                           fill=TRUE))
     
     if(nrow(sampParents)==0) {
-      sampAll <- idSampleParents(sampleUuid, token=NA_character_)
+      sampAll <- sampVal
       return(sampAll)
     } else {
       sampAll <- data.table::rbindlist(list(sampVal, 
