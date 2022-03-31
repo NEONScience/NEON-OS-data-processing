@@ -40,6 +40,7 @@ idSampleParents <- function(sampleUuid, token=NA_character_) {
                        "parentSampleBarcode", "parentSampleArchiveGuid")
   
   sampAll <- cbind(sampFoc, sampEmp, row.names=NULL)
+  sampAll$done <- rep(NA, nrow(sampAll))
   
   if(nrow(sampChildren)==0) {
     sampAll <- sampAll
@@ -67,7 +68,7 @@ idSampleParents <- function(sampleUuid, token=NA_character_) {
                                 "barcode", "archiveGuid")
     sampAll <- data.table::rbindlist(list(sampAll, sampParentsOnly, sampParentsAll), fill=TRUE)
   }
-
+  
   return(sampAll)
   
 }

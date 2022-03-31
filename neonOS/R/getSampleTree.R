@@ -78,35 +78,74 @@ getSampleTree <- function(sampleNode, idType="tag",
     sampFoc <- jsonlite::fromJSON(httr::content(req, as="text", encoding="UTF-8"), simplifyVector=TRUE)
     sampUUID <- sampFoc$data$sampleViews$sampleUuid
     
-    # first get all ancestors, then get descendants of each ancestor
-    parents <- getSampleParents(sampUUID, token=token)
-    descendants <- data.table::rbindlist(lapply(parents$sampleUuid, getSampleChildren, token), fill=TRUE)
-    sampAll <- data.table::rbindlist(list(parents, descendants), fill=TRUE)
+    # get parents and children of focal sample, then repeat process for the parents and children
+    sampAll <- idSampleParents(sampUUID, token=token)
     
-    # remove duplicates
-    sampAll <- sampAll[!duplicated(sampAll),]
+    # mark the focal sample's records complete
+    sampAll$done[which(sampAll$sampleUuid==sampUUID)] <- rep("done",
+                                                            length(which(sampAll$sampleUuid==sampUUID)))
     
-    # remove parent sample rows without their own parents
-    ind <- numeric()
-    for(i in sort(union(which(duplicated(sampAll$sampleUuid)), 
-                        which(duplicated(sampAll$sampleUuid, fromLast=TRUE))))) {
-      if(!is.na(sampAll$parentSampleUuid[i])) {
-        next
-      }
-      si <- sampAll$sampleUuid[i]
-      if(is.na(sampAll$parentSampleUuid[i])) {
-        if(!all(is.na(sampAll$parentSampleUuid[which(sampAll$sampleUuid==si)]))) {
-          ind <- c(ind, i)
+    # this is mostly working, but records marked as undone keep getting re-introduced
+    while(any(is.na(sampAll$done))) {
+      sampNew <- sampAll[which(is.na(sampAll$done)),]
+      sampNewRel <- data.table::rbindlist(lapply(sampNew$sampleUuid, idSampleParents, token), fill=TRUE)
+      sampAll <- data.table::rbindlist(list(sampAll, sampNewRel), fill=TRUE)
+      sampAll <- data.frame(sampAll)
+      
+      # remove duplicates
+      sampAll <- sampAll[!duplicated(sampAll),]
+      
+      # remove sample rows that don't include parents, and aren't root samples
+      ind <- numeric()
+      for(i in sort(union(which(duplicated(sampAll$sampleUuid)), 
+                          which(duplicated(sampAll$sampleUuid, fromLast=TRUE))))) {
+        if(!is.na(sampAll$parentSampleUuid[i])) {
+          next
+        }
+        si <- sampAll$sampleUuid[i]
+        if(is.na(sampAll$parentSampleUuid[i])) {
+          if(!all(is.na(sampAll$parentSampleUuid[which(sampAll$sampleUuid==si)]))) {
+            ind <- c(ind, i)
+          }
         }
       }
+      if(length(which(is.na(sampAll$sampleUuid)))>0) {
+        ind <- c(ind, which(is.na(sampAll$sampleUuid)))
+      }
+      sampAll <- sampAll[-ind,]
+      
+      # mark the focal sample's records complete
+      sampAll$done[which(sampAll$sampleUuid %in% sampNew$sampleUuid)] <- rep("done",
+                                            length(which(sampAll$sampleUuid %in% sampNew$sampleUuid)))
+      
+      # remove sample rows that are identical except only one is marked "done"
+      ind.d <- numeric()
+      for(i in sort(union(which(duplicated(sampAll$sampleUuid)), 
+                          which(duplicated(sampAll$sampleUuid, fromLast=TRUE))))) {
+        if(!is.na(sampAll$done[i])) {
+          next
+        }
+        di <- sampAll$sampleUuid[i]
+        if(is.na(sampAll$done[i])) {
+          focSamp <- paste(sampAll[i,colnames(sampAll)[which(!colnames(sampAll) %in% "done")]], 
+                           collapse=".")
+          dupSamp <- apply(sampAll[which(sampAll$sampleUuid==di),
+                                   colnames(sampAll)[which(!colnames(sampAll) %in% "done")]],
+                           1, paste, collapse=".")
+          if(length(which(focSamp==dupSamp))>1) {
+            ind <- c(ind, i)
+          }
+        }
+      }
+      sampAll <- sampAll[-ind,]
+      
+      # remove duplicates again
+      sampAll <- sampAll[!duplicated(sampAll),]
     }
-    if(length(which(is.na(sampAll$sampleUuid)))>0) {
-      ind <- c(ind, which(is.na(sampAll$sampleUuid)))
-    }
-    sampAll <- sampAll[-ind,]
     
     # attempt to order (would be great to improve. this at least puts root samples at the top)
     sampAll <- sampAll[order(sampAll$parentSampleClass, na.last=FALSE),]
+    sampAll <- sampAll[,colnames(sampAll)[which(!colnames(sampAll) %in% "done")]]
     
     return(sampAll)
     
