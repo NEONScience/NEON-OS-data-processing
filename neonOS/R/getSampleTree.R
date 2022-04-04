@@ -112,7 +112,9 @@ getSampleTree <- function(sampleNode, idType="tag",
       if(length(which(is.na(sampAll$sampleUuid)))>0) {
         ind <- c(ind, which(is.na(sampAll$sampleUuid)))
       }
-      sampAll <- sampAll[-ind,]
+      if(length(ind)>0) {
+        sampAll <- sampAll[-ind,]
+      }
       
       # mark the focal sample's records complete
       sampAll$done[which(sampAll$sampleUuid %in% sampNew$sampleUuid)] <- rep("done",
@@ -133,19 +135,25 @@ getSampleTree <- function(sampleNode, idType="tag",
                                    colnames(sampAll)[which(!colnames(sampAll) %in% "done")]],
                            1, paste, collapse=".")
           if(length(which(focSamp==dupSamp))>1) {
-            ind <- c(ind, i)
+            ind.d <- c(ind.d, i)
           }
         }
       }
-      sampAll <- sampAll[-ind,]
+      if(length(ind.d)>0) {
+        sampAll <- sampAll[-ind.d,]
+      }
       
       # remove duplicates again
       sampAll <- sampAll[!duplicated(sampAll),]
     }
     
     # attempt to order (would be great to improve. this at least puts root samples at the top)
+    # also re-orders columns
     sampAll <- sampAll[order(sampAll$parentSampleClass, na.last=FALSE),]
-    sampAll <- sampAll[,colnames(sampAll)[which(!colnames(sampAll) %in% "done")]]
+    sampAll <- sampAll[,c("sampleUuid", "sampleTag", "barcode", "archiveGuid", 
+                          "sampleClass", "parentSampleUuid", "parentSampleTag", 
+                          "parentSampleBarcode", "parentSampleArchiveGuid", 
+                          "parentSampleClass")]
     
     return(sampAll)
     
