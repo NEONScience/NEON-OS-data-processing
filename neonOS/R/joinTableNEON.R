@@ -141,6 +141,17 @@ joinTableNEON <- function(table1, table2,
     lnk2 <- base::union(lnk2, lfp)
   }
   
+  # check for capitalization issues
+  intLow <- base::sort(base::toupper(base::intersect(base::unlist(table1[,lnk1]),
+                                                     base::unlist(table2[,lnk2]))))
+  intUp <- base::sort(base::intersect(base::toupper(base::unlist(table1[,lnk1])),
+                                      base::toupper(base::unlist(table2[,lnk2]))))
+  # if fields don't match, make everything uppercase
+  if(!identical(intLow, intUp)) {
+    table1[,lnk1] <- base::apply(table1[,lnk1], MARGIN=2, FUN=base::toupper)
+    table2[,lnk2] <- base::apply(table2[,lnk2], MARGIN=2, FUN=base::toupper)
+  }
+  
   # Join tables!
   mergetable <- base::merge(table1, table2, by.x=lnk1, by.y=lnk2, all=TRUE)
   return(mergetable)
