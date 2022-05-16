@@ -131,6 +131,32 @@ joinTableNEON <- function(table1, table2,
     }
   }
   
+  # check for special cases - there are currently 3 machine-readable options
+  # 1. set location.fields to FALSE
+  if(length(grep("location.fields=FALSE", lnk$Notes))>0) {
+    location.fields <- FALSE
+  }
+  # 2. specify a left join instead of full join
+  if(length(grep("left join", lnk$Notes))>0) {
+    yTF <- FALSE
+  } else {
+    yTF <- TRUE
+  }
+  # 3. only proceed if data are from after a certain date
+  if(length(grep("[0-9]{4}[-][0-9]{2}[-][0-9]{2}", lnk$Notes))>0) {
+    dat <- regmatches(lnk$Notes, regexpr("[0-9]{4}[-][0-9]{2}[-][0-9]{2}", lnk$Notes))
+    dat <- as.POSIXct(dat, format="%Y-%m-%d", tz="GMT")
+    date.fields <- colnames(table1)[grep("date", colnames(table1), ignore.case=TRUE)]
+    date.classes <- sapply(table1[,date.fields], class)
+    date.fields <- date.fields[grep("POSIXct", date.classes)]
+    data.dat <- min(as.matrix(table1[,date.fields], na.rm=T))
+    if(data.dat < dat) {
+      stop(paste("For tables ", name1, " and ", name2, 
+                 " this function can only be used to join data collected after ", 
+                 dat, ". See quick start guide.", sep=""))
+    }
+  }
+  
   # optionally include basic location fields in the linking variables, to avoid unnecessary column duplication
   # only include location fields that are present in both tables
   if(location.fields) {
@@ -153,7 +179,8 @@ joinTableNEON <- function(table1, table2,
   }
   
   # Join tables!
-  mergetable <- base::merge(table1, table2, by.x=lnk1, by.y=lnk2, all=TRUE)
+  mergetable <- base::merge(table1, table2, by.x=lnk1, by.y=lnk2, 
+                            all.x=TRUE, all.y=yTF)
   return(mergetable)
   
 }
