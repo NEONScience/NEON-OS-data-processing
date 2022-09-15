@@ -9,7 +9,7 @@ joinTableNEON(
   table2,
   name1 = NA_character_,
   name2 = NA_character_,
-  location.fields = TRUE
+  location.fields = NA
 )
 }
 \arguments{
@@ -21,7 +21,7 @@ joinTableNEON(
 
 \item{name2}{The name of the second table. Defaults to the object name of table2. [character]}
 
-\item{location.fields}{Should standard location fields be included in the list of linking variables, to avoid duplicating those fields? Defaults to TRUE. [logical]}
+\item{location.fields}{Should standard location fields be included in the list of linking variables, to avoid duplicating those fields? For most data products, these fields are redundant, but there are a few exceptions. This parameter defaults to NA, in which case the Quick Start Guide is consulted. If QSG indicates location fields shouldn't be included, value is updated to FALSE, otherwise to TRUE. Enter TRUE or FALSE to override QSG defaults. [logical]}
 }
 \value{
 A single data frame created by joining table1 and table2 on the fields identified in the quick start guide.

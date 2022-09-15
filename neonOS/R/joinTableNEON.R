@@ -11,7 +11,7 @@
 #' @param table2 A second data frame containing data from a NEON observational data table [data frame]
 #' @param name1 The name of the first table. Defaults to the object name of table1. [character]
 #' @param name2 The name of the second table. Defaults to the object name of table2. [character]
-#' @param location.fields Should standard location fields be included in the list of linking variables, to avoid duplicating those fields? Defaults to TRUE. [logical]
+#' @param location.fields Should standard location fields be included in the list of linking variables, to avoid duplicating those fields? For most data products, these fields are redundant, but there are a few exceptions. This parameter defaults to NA, in which case the Quick Start Guide is consulted. If QSG indicates location fields shouldn't be included, value is updated to FALSE, otherwise to TRUE. Enter TRUE or FALSE to override QSG defaults. [logical]
 
 #' @return A single data frame created by joining table1 and table2 on the fields identified in the quick start guide.
 
@@ -30,7 +30,7 @@
 joinTableNEON <- function(table1, table2, 
                           name1=NA_character_, 
                           name2=NA_character_,
-                          location.fields=TRUE) {
+                          location.fields=NA) {
   
   if(is.na(name1)) {
     name1 <- deparse(substitute(table1))
@@ -132,10 +132,17 @@ joinTableNEON <- function(table1, table2,
   }
   
   # check for special cases - there are currently 3 machine-readable options
-  # 1. set location.fields to FALSE
-  if(length(grep("location.fields=FALSE", lnk$Notes))>0) {
-    location.fields <- FALSE
+  # 1. set location.fields to FALSE, unless overridden by user setting
+  if(is.na(location.fields)) {
+    if(length(grep("location.fields=FALSE", lnk$Notes))>0) {
+      location.fields <- FALSE
+    } else {
+      location.fields <- TRUE
+    }
+  } else {
+    location.fields <- location.fields
   }
+  
   # 2. specify a left join instead of full join
   if(length(grep("left join", lnk$Notes))>0) {
     yTF <- FALSE
