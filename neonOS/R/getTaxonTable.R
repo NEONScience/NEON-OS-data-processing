@@ -26,6 +26,11 @@
 #'
 #'
 #' @export
+#' 
+# changelog and author contributions / copyrights
+#   created by Eric Sokol (2018)
+#   migrated from neonUtilities to neonOS and updated with verbose option (Claire Lunch, 2022-09-15)
+##############################################################################################
 
 getTaxonTable <- function(
   taxonType = NA, #string, taxonTypeCode, one of ALGAE, BEETLE, BIRD, FISH, HERPETOLOY, MACROINVERTEBRATE, MOSQUITO, MOSQUITO_PATHOGENS, SMALL_MAMMAL, PLANT, TICK
