@@ -26,6 +26,15 @@ A table of sample identifiers, their classes, and their parent samples.
 \description{
 Find all samples in the sample tree of a given sample.
 }
+\details{
+Related NEON samples can be connected to each other in a parent-child hierarchy. Parents can have one or many children, and children can have one or many parents. Sample hierarchies can be simple or complex - for example, particulate mass samples (dust filters) have no parents or children, whereas water chemistry samples can be subsampled for dissolved gas, isotope, and microbial measurements. This function finds all ancestors and descendants of the focal sample (the sampleNode), and all of their relatives, and so on recursively, to provide the entire hierarchy. See documentation for each data product for more specific information.
+}
+\examples{
+# Find related samples for a soil nitrogen transformation sample
+\dontrun{
+soil_samp <- getSampleTree(sampleNode="B00000123538", idType="barcode")
+}
+}
 \references{
 License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
 }

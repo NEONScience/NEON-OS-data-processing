@@ -20,7 +20,7 @@
 #' # SMALL_MAMMAL, PLANT, TICK	
 #' #################################	
 #' # get the first 4 fish taxa	
-#' taxa_table <- getTaxonTable('FISH', recordReturnLimit = 4)
+#' taxa_table <- getTaxonList('FISH', recordReturnLimit = 4)
 #'
 #' @references License: GNU AFFERO GENERAL PUBLIC LICENSE Version 3, 19 November 2007
 #'
@@ -29,10 +29,10 @@
 #' 
 # changelog and author contributions / copyrights
 #   created by Eric Sokol (2018)
-#   migrated from neonUtilities to neonOS and updated with verbose option (Claire Lunch, 2022-09-15)
+#   migrated from neonUtilities (as getTaxonTable()) to neonOS and updated with verbose option (Claire Lunch, 2022-09-15)
 ##############################################################################################
 
-getTaxonTable <- function(
+getTaxonList <- function(
   taxonType = NA, #string, taxonTypeCode, one of ALGAE, BEETLE, BIRD, FISH, HERPETOLOY, MACROINVERTEBRATE, MOSQUITO, MOSQUITO_PATHOGENS, SMALL_MAMMAL, PLANT, TICK
   recordReturnLimit = NA, #integer, The number of items to limit the result set to. If NA, will return all records in table.
   stream = 'true', #string, Option to obtain the result as a stream. Utilize for large requests.

@@ -13,6 +13,14 @@
 #' @param token User specific API token (generated within neon.datascience user accounts). Optional. [character]
 
 #' @return A table of sample identifiers, their classes, and their parent samples.
+#' 
+#' @details Related NEON samples can be connected to each other in a parent-child hierarchy. Parents can have one or many children, and children can have one or many parents. Sample hierarchies can be simple or complex - for example, particulate mass samples (dust filters) have no parents or children, whereas water chemistry samples can be subsampled for dissolved gas, isotope, and microbial measurements. This function finds all ancestors and descendants of the focal sample (the sampleNode), and all of their relatives, and so on recursively, to provide the entire hierarchy. See documentation for each data product for more specific information.
+#' 
+#' @examples	
+#' # Find related samples for a soil nitrogen transformation sample
+#' \dontrun{
+#' soil_samp <- getSampleTree(sampleNode="B00000123538", idType="barcode")
+#' }
 
 #' @export
 
@@ -31,6 +39,10 @@ getSampleTree <- function(sampleNode, idType="tag",
   if(idType=="tag" & is.na(sampleClass)) {
     req <- getAPI(paste("http://data.neonscience.org/api/v0/samples/classes?sampleTag=", 
                         sampleNode, sep=""), token=token)
+    
+    if(is.null(req)) {
+      return(invisible())
+    }
     
     req.content <- httr::content(req, as="parsed")
     if(!is.null(req.content$error$status)) {
