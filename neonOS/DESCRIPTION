@@ -3,7 +3,7 @@ Title: Basic Data Wrangling for NEON Observational Data
 Version: 0.1.1
 Date: 2022-03-25
 Authors@R: c(person("Claire","Lunch",email="clunch@battelleecology.org",role=c("aut","cre","ctb")), person("NEON (National Ecological Observatory Network)", role="aut"))
-Description: NEON observational data are provided via the NEON Data Portal <http://data.neonscience.org> 
+Description: NEON observational data are provided via the NEON Data Portal <https://data.neonscience.org> 
   in a common format consisting of one or more tabular data files. This package provides tools for 
   performing common operations on observational data, including checking for duplicates and joining tables.
 Depends: R (>= 4.0.0)
