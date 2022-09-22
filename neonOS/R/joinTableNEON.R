@@ -49,7 +49,7 @@ joinTableNEON <- function(table1, table2,
   table2 <- as.data.frame(table2, stringsAsFactors=F)
   
   # get table joining tables (TJT) from NEON-quick-start-guides
-  tjt <- tryCatch(utils::read.csv("https://raw.githubusercontent.com/NEONScience/NEON-quick-start-guides/main/allTableJoins.csv"),
+  tjt <- tryCatch(utils::read.csv("https://raw.githubusercontent.com/NEONScience/NEON-quick-start-guides/main/allTableJoins.csv", stringsAsFactors=F),
              error=function(e) {return(invisible())}, warning=function(w) {return(invisible())})
   if(!inherits(tjt, "data.frame")) {
     message("Could not access quick start guides, using archived version of table joining instructions. Check for updates when you have internet access.")
