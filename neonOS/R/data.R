@@ -36,7 +36,7 @@
 #'   \item{publicationDate}{Date of data publication on the NEON data portal}
 #'   \item{release}{Identifier for data release}
 #' }
-#' @source \url{https://data.neonscience.org/data-products/DP1.10003.001}
+#' @source \url{https://data.neonscience.org/api/v0/products/DP1.10003.001}
 "brd_perpoint"
 
 
@@ -73,7 +73,7 @@
 #'   \item{publicationDate}{Date of data publication on the NEON data portal}
 #'   \item{release}{Identifier for data release}
 #' }
-#' @source \url{https://data.neonscience.org/data-products/DP1.10003.001}
+#' @source \url{https://data.neonscience.org/api/v0/products/DP1.10003.001}
 "brd_countdata"
 
 
@@ -85,7 +85,7 @@
 #' \describe{
 #'   The variable names, descriptions, and units can be found in the cfc_lignin_variables table
 #' }
-#' @source \url{https://data.neonscience.org/data-products/DP1.10026.001}
+#' @source \url{https://data.neonscience.org/api/v0/products/DP1.10026.001}
 "cfc_lignin_test_dups"
 
 
@@ -104,5 +104,5 @@
 #'   \item{pubFormat}{Publication formatting, e.g. date format or rounding}
 #'   \item{primaryKey}{Fields indicated by Y, when combined, should identify a unique record. Used by removeDups() to identify duplicate records.}
 #' }
-#' @source \url{https://data.neonscience.org/data-products/DP1.10026.001}
+#' @source \url{https://data.neonscience.org/api/v0/products/DP1.10026.001}
 "cfc_lignin_variables"

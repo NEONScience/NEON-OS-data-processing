@@ -11,7 +11,7 @@ A data frame with 26 rows and 25 columns
 }
 }
 \source{
-\url{https://data.neonscience.org/data-products/DP1.10026.001}
+\url{https://data.neonscience.org/api/v0/products/DP1.10026.001}
 }
 \usage{
 cfc_lignin_test_dups

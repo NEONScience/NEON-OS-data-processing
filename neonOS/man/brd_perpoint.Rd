@@ -41,7 +41,7 @@ A data frame with 54 rows and 31 columns
 }
 }
 \source{
-\url{https://data.neonscience.org/data-products/DP1.10003.001}
+\url{https://data.neonscience.org/api/v0/products/DP1.10003.001}
 }
 \usage{
 brd_perpoint
