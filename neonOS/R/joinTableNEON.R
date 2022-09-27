@@ -125,7 +125,7 @@ joinTableNEON <- function(table1, table2,
   # this won't work for samples with different names in the two tables. for now, skip that case
   if(length(grep("ID", lnk1))>0 & length(grep("ID", lnk2))>0) {
     if(!identical(grep("ID", lnk1, value=TRUE), grep("ID", lnk2, value=TRUE))) {
-      cat("Linking sample fields do not have the same names; barcodes are not included in the joining variables.\n")
+      message("Linking sample fields do not have the same names; barcodes are not included in the joining variables.")
     } else {
       codes <- base::union(gsub("ID", "Code", lnk1), gsub("ID", "Code", lnk2))
       codesp <- base::intersect(base::intersect(codes, names(table1)), 

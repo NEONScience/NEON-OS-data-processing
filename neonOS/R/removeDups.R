@@ -88,7 +88,7 @@ removeDups <- function(data, variables, table=NA_character_) {
     # check if entire records are duplicates
     if(length(which(duplicated(data)))==length(which(duplicated(data$uid)))) {
       data <- data[-which(duplicated(data$uid)),]
-      cat("Data contain identical records with identical uid. This indicates data have been combined from multiple downloads. Duplicate records have been removed without flagging.\n")
+      message("Data contain identical records with identical uid. This indicates data have been combined from multiple downloads. Duplicate records have been removed without flagging.")
     } else {
       stop("Data contain records with identical uid but differing data values. This indicates something has gone wrong with the data post-download.\nStart over with a fresh download of the current data.")
     }
@@ -127,7 +127,7 @@ removeDups <- function(data, variables, table=NA_character_) {
   # if no, skip to flagging
   if(nrow(unique(cbind(data.low[,key])))==nrow(data.low)) {
     data <- data
-    cat("No duplicated key values found!\n")
+    message("No duplicated key values found!")
   } else {
     
     # subset to only the records with duplicate values in the key fields
@@ -136,8 +136,8 @@ removeDups <- function(data, variables, table=NA_character_) {
     
     # iterate over unique key values
     dup.keys <- cbind(unique(data.sub[,key]))
-    cat(nrow(dup.keys), "duplicated key values found, representing",
-        nrow(data.sub), "non-unique records. Attempting to resolve.\n")
+    message(paste(nrow(dup.keys), "duplicated key values found, representing",
+        nrow(data.sub), "non-unique records. Attempting to resolve.", sep=" "))
     pb <- utils::txtProgressBar(style=3)
     utils::setTxtProgressBar(pb, 1/nrow(dup.keys))
     ct <- 0
@@ -237,18 +237,18 @@ removeDups <- function(data, variables, table=NA_character_) {
     close(pb)
     
     if(nrow(unique(cbind(data.low[,key])))!=nrow(data.low)) {
-      cat(ct, " resolveable duplicates merged into matching records\n", length(which(data$duplicateRecordQF==1)), 
-          " resolved records flagged with duplicateRecordQF=1\n", sep="")
+      message(paste(ct, " resolveable duplicates merged into matching records\n", length(which(data$duplicateRecordQF==1)), 
+          " resolved records flagged with duplicateRecordQF=1", sep=""))
     }
     
     if(length(which(data$duplicateRecordQF==2))>0) {
-      cat(length(which(data$duplicateRecordQF==2)), 
-          " unresolveable duplicates flagged with duplicateRecordQF=2\n", sep="")
+      message(paste(length(which(data$duplicateRecordQF==2)), 
+          " unresolveable duplicates flagged with duplicateRecordQF=2", sep=""))
     }
     
     if(length(which(data$duplicateRecordQF==-1))>0) {
-      cat(length(which(data$duplicateRecordQF==-1)), 
-          " records could not be evaluated due to missing primary key values and are flagged with duplicateRecordQF=-1\n", sep="")
+      message(paste(length(which(data$duplicateRecordQF==-1)), 
+          " records could not be evaluated due to missing primary key values and are flagged with duplicateRecordQF=-1", sep=""))
     }
     
   }
