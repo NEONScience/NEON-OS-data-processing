@@ -36,6 +36,11 @@ joinTableNEON <- function(table1, table2,
                           name2=NA_character_,
                           location.fields=NA) {
   
+  if(!inherits(name1, "character") | length(name1)>1 | 
+     !inherits(name2, "character") | length(name2)>1 ) {
+    stop(paste("Inputs name1 and name2 should each be a single character string, matching the official NEON names of the input tables. Check values and syntax for these inputs."))
+  }
+  
   if(is.na(name1)) {
     name1 <- deparse(substitute(table1))
   }
