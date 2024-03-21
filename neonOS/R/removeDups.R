@@ -44,6 +44,15 @@ removeDups <- function(data, variables, table=NA_character_) {
   variables <- as.data.frame(variables, stringsAsFactors=F)
   data <- as.data.frame(data, stringsAsFactors=F)
   
+  # check for enough data to run
+  if(nrow(data)==1) {
+    stop("Only one row of data present; cannot evaluate for duplicates.")
+  } else {
+    if(nrow(data)==0) {
+      stop("Data table is empty.")
+    }
+  }
+  
   # check table matching
   if(length(which(variables$table==table))==0) {
     stop(paste("Table name", table, "does not match any table in variables file."))
@@ -61,8 +70,16 @@ removeDups <- function(data, variables, table=NA_character_) {
     dif <- setdiff(varnames, names(data))
     if(length(dif)!=0) {
       if(all(dif %in% variables$fieldName[which(variables$downloadPkg=="expanded" & 
-                                            variables$table==table)])) {
-        stop("Input data appear to be the basic download package. The expanded data package is required for removeDups() to identify all duplicates correctly.")
+                                                variables$table==table)])) {
+        stop(paste("Field names in data do not match variables file.\n",
+                   paste0(setdiff(names(data), varnames), collapse=" "), 
+                   ifelse(length(setdiff(names(data), varnames))>0, 
+                          " are in data and not in variables file;\n",
+                          ""), 
+                   paste0(setdiff(varnames, names(data)), collapse=" "), 
+                   ifelse(length(setdiff(varnames, names(data)))>0,
+                          " are in variables file and not in data. The missing data fields are in the expanded package, suggesting the data file may be from the basic package; if an expanded package exists for a given table, removeDups() can only be used with the expanded package.",
+                          ""), sep=""))
       }
     }
     stop(paste("Field names in data do not match variables file.\n",
