@@ -14,7 +14,7 @@
 #' @return A modified data frame with resolveable duplicates removed and a flag field added and populated.
 
 #' @details 
-#' Duplicates are identified based on exact matches in the values of the primary key. For records with identical keys, these steps are followed, in order: (1) If records are identical except for NA or empty string values, the non-empty values are kept. (2) If records are identical except for uid, remarks, and/or personnel (xxxxBy) fields, unique values are concatenated within each field, and the merged version is kept. (3) For records that are identical following steps 1 and 2, one record is kept and flagged with duplicateRecordQF=1. (4) Records that can't be resolved by steps 1-3 are flagged with duplicateRecordQF=2. Note that in a set of three or more duplicates, some records may be resolveable and some may not; if two or more records are left after steps 1-3, all remaining records are flagged with duplicateRecordQF=2.
+#' Duplicates are identified based on exact matches in the values of the primary key. For records with identical keys, these steps are followed, in order: (1) If records are identical except for NA or empty string values, the non-empty values are kept. (2) If records are identical except for uid, remarks, and/or personnel (xxxxBy) fields, unique values are concatenated within each field, and the merged version is kept. (3) For records that are identical following steps 1 and 2, one record is kept and flagged with duplicateRecordQF=1. (4) Records that can't be resolved by steps 1-3 are flagged with duplicateRecordQF=2. Note that in a set of three or more duplicates, some records may be resolveable and some may not; if two or more records are left after steps 1-3, all remaining records are flagged with duplicateRecordQF=2. In some limited cases, duplicates can't be unambiguously identified, and these records are flagged with duplicateRecordQF=-1.
 
 #' @examples	
 #' # Resolve and flag duplicates in a test dataset of foliar lignin
@@ -56,6 +56,19 @@ removeDups <- function(data, variables, table=NA_character_) {
   # check table matching
   if(length(which(variables$table==table))==0) {
     stop(paste("Table name", table, "does not match any table in variables file."))
+  }
+  
+  # exceptions for specific data tables
+  if(table=="brd_countdata") {
+    stop("Duplicates cannot be unambiguously identified in brd_countdata. Multiple birds can be observed separately during the same observation minute, at the same distance.")
+  }
+  if(table=="vst_apparentindividual") {
+    if(min(data$date) <= as.POSIXct("2021-12-31", tz="GMT")) {
+      message("In vst_apparentindividual, tempStemID indicates different stems of a multi-stem individual. This temporary ID was rolled out during the 2019-2021 field seasons. In data collected prior to its implementation, multi-stem individuals cannot be distiguished from duplicates, and are flagged with -1, meaning could not be evaluated.")
+    }
+  }
+  if(table=="mam_pertrapnight") {
+    message("In some limited cases, duplicates cannot be unambiguously identified in mam_pertrapnight. These cases are (1) when multiple individuals are found in a single trap, and are not tagged; this happens when an individual gives birth in the trap, and (2) when traps are disturbed, and locations are uncertain; in this case grid locations are labeled with Xs. These two scenarios are flagged with -1, meaning could not be evaluated.")
   }
   
   # remove fields not published
