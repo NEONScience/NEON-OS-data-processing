@@ -68,7 +68,10 @@ removeDups <- function(data, variables, table=NA_character_) {
     }
   }
   if(table=="mam_pertrapnight") {
-    message("In some limited cases, duplicates cannot be unambiguously identified in mam_pertrapnight. These cases are (1) when multiple individuals are found in a single trap, and are not tagged; this happens when an individual gives birth in the trap, and (2) when traps are disturbed, and locations are uncertain; in this case grid locations are labeled with Xs. These two scenarios are flagged with -1, meaning could not be evaluated.")
+    if(any(grepl(pattern="X", x=data$trapCoordinate)) | 
+       any(grepl(pattern="4", x=data$trapStatus))) {
+      message("In rare situations, duplicates cannot be unambiguously identified in mam_pertrapnight. These cases are (1) when multiple individuals are found in a single trap, and cannot be tagged, and (2) when multiple trap locations are disturbed, indicated by trap coordinates labeled with Xs, and the same capture data are found in each. These two scenarios are flagged with -1, meaning could not be evaluated.")
+    }
   }
   
   # remove fields not published
@@ -195,6 +198,29 @@ removeDups <- function(data, variables, table=NA_character_) {
       }
       data.dup$rowid <- as.numeric(data.dup$rowid)
       
+      # check for specific cases that can't be evaluated
+      # veg structure: multi-stem individuals with empty tempStemID
+      if(table=="vst_apparentindividual") {
+        if(all(is.na(data.dup$tempStemID))) {
+          data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
+          next
+        }
+      }
+      # mammals: uncertain grid point locations
+      if(table=="mam_pertrapnight") {
+        if(any(grepl("X", data.dup$trapCoordinate))) {
+          data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
+          next
+        }
+        # mammals: multiple untagged captures in one trap
+        if(any(grepl("4", data.dup$trapStatus))) {
+          if(length(which(is.na(data.dup$tagID)))>1) {
+            data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
+            next
+          }
+        }
+      }
+      
       # assign a QF value of 1 in the original data
       data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- 1
       
@@ -278,7 +304,7 @@ removeDups <- function(data, variables, table=NA_character_) {
     
     if(length(which(data$duplicateRecordQF==-1))>0) {
       message(paste(length(which(data$duplicateRecordQF==-1)), 
-          " records could not be evaluated due to missing primary key values and are flagged with duplicateRecordQF=-1", sep=""))
+          " records could not be evaluated and are flagged with duplicateRecordQF=-1", sep=""))
     }
     
   }
