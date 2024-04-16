@@ -9,7 +9,8 @@ joinTableNEON(
   table2,
   name1 = NA_character_,
   name2 = NA_character_,
-  location.fields = NA
+  location.fields = NA,
+  left.join = NA
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ joinTableNEON(
 \item{name2}{The name of the second table. Defaults to the object name of table2. [character]}
 
 \item{location.fields}{Should standard location fields be included in the list of linking variables, to avoid duplicating those fields? For most data products, these fields are redundant, but there are a few exceptions. This parameter defaults to NA, in which case the Quick Start Guide is consulted. If QSG indicates location fields shouldn't be included, value is updated to FALSE, otherwise to TRUE. Enter TRUE or FALSE to override QSG defaults. [logical]}
+
+\item{left.join}{Should the tables be joined in a left join? This parameter defaults to NA, in which case the Quick Start Guide is consulted. If the QSG does not specify, a full join is performed. Enter TRUE or FALSE to override the default behavior, including using FALSE to force a full join when a left join is specified in the QSG. Forcing a left join is not generally recommended; remember you will likely be discarding data from the second table. [logical]}
 }
 \value{
 A single data frame created by joining table1 and table2 on the fields identified in the quick start guide.
@@ -30,7 +33,7 @@ A single data frame created by joining table1 and table2 on the fields identifie
 NEON observational data are published in multiple tables, usually corresponding to activities performed in different times or places. This function uses the fields identified in NEON Quick Start Guides to join tables containing related data.
 }
 \details{
-The "Table joining" section of NEON Quick Start Guides (QSGs) provides the field names of the linking variables between related NEON data tables. This function uses the QSG information to join tables. All tables are joined using a full join. If you need to remove duplicates as well as joining, run removeDups() before running joinTableNEON(). Tables that don't appear together in QSG instructions can't be joined here. Some tables may not be straightforwardly joinable, such as tables of analytical standards run as unknowns. Theoretically, these data could be joined to analytical results by a combination of laboratory and date, but in general, a table join is not the best way to analyze this type of data. If a pair of tables is omitted from QSG instructions that you expected to find, contact NEON.
+The "Table joining" section of NEON Quick Start Guides (QSGs) provides the field names of the linking variables between related NEON data tables. This function uses the QSG information to join tables. Tables are joined using a full join unless the QSG specifies otherwise. If you need to remove duplicates as well as joining, run removeDups() before running joinTableNEON(). Tables that don't appear together in QSG instructions can't be joined here. Some tables may not be straightforwardly joinable, such as tables of analytical standards run as unknowns. Theoretically, these data could be joined to analytical results by a combination of laboratory and date, but in general, a table join is not the best way to analyze this type of data. If a pair of tables is omitted from QSG instructions that you expected to find, contact NEON.
 }
 \examples{
 # Join metadata from the point level to individual observations, for NEON bird data

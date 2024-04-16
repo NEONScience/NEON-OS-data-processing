@@ -12,11 +12,12 @@
 #' @param name1 The name of the first table. Defaults to the object name of table1. [character]
 #' @param name2 The name of the second table. Defaults to the object name of table2. [character]
 #' @param location.fields Should standard location fields be included in the list of linking variables, to avoid duplicating those fields? For most data products, these fields are redundant, but there are a few exceptions. This parameter defaults to NA, in which case the Quick Start Guide is consulted. If QSG indicates location fields shouldn't be included, value is updated to FALSE, otherwise to TRUE. Enter TRUE or FALSE to override QSG defaults. [logical]
+#' @param left.join Should the tables be joined in a left join? This parameter defaults to NA, in which case the Quick Start Guide is consulted. If the QSG does not specify, a full join is performed. Enter TRUE or FALSE to override the default behavior, including using FALSE to force a full join when a left join is specified in the QSG. Forcing a left join is not generally recommended; remember you will likely be discarding data from the second table. [logical]
 
 #' @return A single data frame created by joining table1 and table2 on the fields identified in the quick start guide.
 
 #' @details 
-#' The "Table joining" section of NEON Quick Start Guides (QSGs) provides the field names of the linking variables between related NEON data tables. This function uses the QSG information to join tables. All tables are joined using a full join. If you need to remove duplicates as well as joining, run removeDups() before running joinTableNEON(). Tables that don't appear together in QSG instructions can't be joined here. Some tables may not be straightforwardly joinable, such as tables of analytical standards run as unknowns. Theoretically, these data could be joined to analytical results by a combination of laboratory and date, but in general, a table join is not the best way to analyze this type of data. If a pair of tables is omitted from QSG instructions that you expected to find, contact NEON.
+#' The "Table joining" section of NEON Quick Start Guides (QSGs) provides the field names of the linking variables between related NEON data tables. This function uses the QSG information to join tables. Tables are joined using a full join unless the QSG specifies otherwise. If you need to remove duplicates as well as joining, run removeDups() before running joinTableNEON(). Tables that don't appear together in QSG instructions can't be joined here. Some tables may not be straightforwardly joinable, such as tables of analytical standards run as unknowns. Theoretically, these data could be joined to analytical results by a combination of laboratory and date, but in general, a table join is not the best way to analyze this type of data. If a pair of tables is omitted from QSG instructions that you expected to find, contact NEON.
 
 #' @examples	
 #' # Join metadata from the point level to individual observations, for NEON bird data
@@ -34,7 +35,8 @@
 joinTableNEON <- function(table1, table2, 
                           name1=NA_character_, 
                           name2=NA_character_,
-                          location.fields=NA) {
+                          location.fields=NA,
+                          left.join=NA) {
   
   if(!inherits(name1, "character") | length(name1)>1 | 
      !inherits(name2, "character") | length(name2)>1 ) {
@@ -158,7 +160,17 @@ joinTableNEON <- function(table1, table2,
   } else {
     yTF <- TRUE
   }
-  # 3. only proceed if data are from after a certain date
+  
+  # 3. overrule left/full join if function call specifies
+  if(!is.na(left.join)) {
+    if(left.join) {
+      yTF <- FALSE
+    } else {
+      yTF <- TRUE
+    }
+  }
+  
+  # 4. only proceed if data are from after a certain date
   if(length(grep("[0-9]{4}[-][0-9]{2}[-][0-9]{2}", lnk$Notes))>0) {
     dat <- regmatches(lnk$Notes, regexpr("[0-9]{4}[-][0-9]{2}[-][0-9]{2}", lnk$Notes))
     dat <- as.POSIXct(dat, format="%Y-%m-%d", tz="GMT")
