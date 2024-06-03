@@ -46,10 +46,14 @@ removeDups <- function(data, variables, table=NA_character_) {
   
   # check for enough data to run
   if(nrow(data)==1) {
-    stop("Only one row of data present; cannot evaluate for duplicates.")
+    data$duplicateRecordQF <- 0
+    warning("Only one row of data present.")
+    return(data)
   } else {
     if(nrow(data)==0) {
-      stop("Data table is empty.")
+      data$duplicateRecordQF <- numeric()
+      warning("Data table is empty.")
+      return(data)
     }
   }
   
@@ -167,133 +171,64 @@ removeDups <- function(data, variables, table=NA_character_) {
     data.sub <- data.low[union(which(duplicated(data.low[,key])),
                                         which(duplicated(data.low[,key], fromLast=T))),]
     
+    # get subset without duplicate values
+    data.nodups <- data[which(!data$rowid %in% data.sub$rowid),]
+    
     # iterate over unique key values
     dup.keys <- cbind(unique(data.sub[,key]))
     message(paste(nrow(dup.keys), "duplicated key values found, representing",
         nrow(data.sub), "non-unique records. Attempting to resolve.", sep=" "))
-    pb <- utils::txtProgressBar(style=3)
-    utils::setTxtProgressBar(pb, 1/nrow(dup.keys))
-    ct <- 0
-    for(i in 1:nrow(dup.keys)) {
-      
-      # check for NA key values
-      if(ncol(dup.keys)==1) {
-        na.check <- dup.keys[i]
-        dup.keyvalue <- dup.keys[i]
-      } else {
-        na.check <- dup.keys[i,]
-        dup.keyvalue <- paste0(dup.keys[i,])
+    
+    # set up parallel cores
+    if(nrow(dup.keys)>=100) {
+      ncores <- max(1, parallel::detectCores()-2, na.rm=TRUE)
+    } else {
+      ncores <- 1
+    }
+    cl <- parallel::makeCluster(ncores)
+    suppressWarnings(on.exit(parallel::stopCluster(cl)))
+    
+    # strategy: use the data.sub tables of matching values as the chunks. process them, put the table back together, and sort by rowid
+    # is this going to break because there will probably be more chunks than cores? kinda seems like it
+    # have to use multiple matching values as the chunks, and loop over the function as it is now
+    # add an ncores argument
+    # result <- parLapply(cl, chunks, function(chunk) {
+    #   modify_rows(chunk, df)
+    # })
+    # is this actually using the correct number of cores?
+    
+    # make data frame chunks of one key value each
+    dup.list <- list(nrow(dup.keys))
+    if(ncol(dup.keys)==1) {
+      for(i in 1:nrow(dup.keys)) {
+        dup.list[[i]] <- data.sub[which(data.sub[,key] == dup.keys[i]),]
       }
-      if(all(is.na(na.check))) {
-        data$duplicateRecordQF[which(data$keyvalue %in% dup.keyvalue)] <- -1
-        next
-      }
-      
-      # subset data to one key value
-      if(ncol(dup.keys)==1) {
-        data.dup <- data.sub[which(data.sub[,key] == dup.keys[i]),]
-      } else {
-        data.dup <- data.sub[which(do.call(paste0, data.sub[key]) == 
+    } else {
+      for(i in 1:nrow(dup.keys)) {
+        dup.list[[i]] <- data.sub[which(do.call(paste0, data.sub[key]) == 
                                      do.call(paste0, dup.keys)[i]),]
       }
-      data.dup$rowid <- as.numeric(data.dup$rowid)
-      
-      # check for specific cases that can't be evaluated
-      # veg structure: multi-stem individuals with empty tempStemID
-      if(table=="vst_apparentindividual") {
-        if(all(is.na(data.dup$tempStemID))) {
-          data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
-          next
-        }
-      }
-      # mammals: uncertain grid point locations
-      if(table=="mam_pertrapnight") {
-        if(any(grepl("X", data.dup$trapCoordinate))) {
-          data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
-          next
-        }
-        # mammals: multiple untagged captures in one trap
-        if(any(grepl("4", data.dup$trapStatus))) {
-          if(length(which(is.na(data.dup$tagID)))>1) {
-            data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
-            next
-          }
-        }
-      }
-      
-      # assign a QF value of 1 in the original data
-      data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- 1
-      
-      # if a field is NA in one duplicate but populated in the other,
-      # copy the value from the populated one into the NA
-      # do it in both the original data and in the subset
-      for(j in 1:nrow(data.dup)) {
-        if(all(!is.na(data.dup[j,]))) {
-          data <- data
-        } else {
-          for(k in 1:nrow(data.dup)) {
-            if(all(data.dup[k,-which(colnames(data.dup) %in% c("uid","rowid"))] == 
-                   data.dup[j,-which(colnames(data.dup) %in% c("uid","rowid"))], na.rm=T)) {
-              data[which(data$rowid==data.dup$rowid[j]),][which(is.na(data.dup[j,]))] <- 
-                data[which(data$rowid==data.dup$rowid[k]),][which(is.na(data.dup[j,]))]
-              data.dup[j,][which(is.na(data.dup[j,]))] <- 
-                data.dup[k,][which(is.na(data.dup[j,]))]
-            } else {
-              data[which(data$rowid==data.dup$rowid[j]),] <- 
-                data[which(data$rowid==data.dup$rowid[j]),]
-            }
-          }
-        }
-      }
-      
-      # if all fields are duplicated besides remarks, personnel, and uid, 
-      # concatenate non-data fields with pipe separators
-      # do it in both the original and the subset
-      not.data <- c("rowid", "uid", colnames(data)[grep("emarks", colnames(data))], 
-                    colnames(data)[grep("edBy", colnames(data))])
-      # if data columns differ, duplicate can't be resolved
-      if(nrow(unique(data.dup[,setdiff(colnames(data.dup), not.data)]))==nrow(data.dup)) {
-        data <- data
-      } else {
-        for(k in not.data[-which(not.data=="rowid")]) {
-          if(length(unique(data.dup[,k]))==1) {
-            next
-          } else {
-            dup.not <- data.dup$rowid[union(which(duplicated(
-              data.dup[,setdiff(colnames(data.dup), not.data)])), 
-              which(duplicated(data.dup[,setdiff(colnames(data.dup), not.data)], 
-                                fromLast=T)))]
-            data[which(data$rowid %in% dup.not),k] <- 
-              paste(unique(data[which(data$rowid %in% dup.not),k]), collapse="|")
-            data.dup[which(data.dup$rowid %in% dup.not),k] <- 
-              paste(unique(data.dup[which(data.dup$rowid %in% dup.not),k]), collapse="|")
-          }
-        }
-      }
-      
-      # delete all but one of the set of duplicate records
-      dup.rows <- data.dup$rowid[which(duplicated(data.dup[,-which(colnames(data.dup)=="rowid")]))]
-      if(length(dup.rows)>0) {
-        data <- data[-which(data$rowid %in% dup.rows),]
-      }
-      ct <- ct + length(dup.rows)
-      utils::setTxtProgressBar(pb, i/nrow(dup.keys))
+    }
+
+    # make data frame chunks of one key value each from the original (mixed case) data
+    data.list <- list(nrow(dup.keys))
+    for(i in 1:nrow(dup.keys)) {
+       data.list[[i]] <- data[which(data$keyvalue %in% dup.list[[i]]$keyvalue),]
     }
     
-    # flag remaining, unresolved duplicates
-    # if some in a group are resolved and some aren't, all end up with QF=2
-    unres.dups <- union(which(duplicated(data$keyvalue)), 
-                        which(duplicated(data$keyvalue, fromLast=T)))
-    if(any(data$duplicateRecordQF==-1)) {
-      unres.dups <- setdiff(unres.dups, which(data$duplicateRecordQF==-1))
-    }
-    data$duplicateRecordQF[unres.dups] <- 2
+    # de-dup each chunk
+    proc.data <- parallel::clusterMap(cl=cl, fun=dupProcess, data=data.list, data.dup=dup.list)
     
-    utils::setTxtProgressBar(pb, 1)
-    close(pb)
+    # stack chunks and re-order
+    data.d <- data.table::rbindlist(proc.data, fill=TRUE)
+    data <- data.table::rbindlist(list(data.d, data.nodups), fill=TRUE)
+    data <- data[order(data$rowid),]
+    
+    # calculate de-dup numbers to report to user
+    dupdiff <- sum(unlist(lapply(dup.list, FUN=nrow)) - unlist(lapply(proc.data, FUN=nrow)))
     
     if(nrow(unique(cbind(data.low[,key])))!=nrow(data.low)) {
-      message(paste(ct, " resolveable duplicates merged into matching records\n", length(which(data$duplicateRecordQF==1)), 
+      message(paste(dupdiff, " resolveable duplicates merged into matching records\n", length(which(data$duplicateRecordQF==1)), 
           " resolved records flagged with duplicateRecordQF=1", sep=""))
     }
     

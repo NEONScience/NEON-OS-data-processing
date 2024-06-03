@@ -113,7 +113,7 @@ joinTableNEON <- function(table1, table2,
   # if linking variables are not present, figure out which error to display
   if(length(c(nl1, nl2))>0) {
     if(length(grep("automatable", c(nl1, nl2)))>0) {
-      stop(paste("Tables", name1, "and", name2, "can't be joined automatically. Consult quick start guide for details about data relationships."))
+      stop(paste("Tables", name1, "and", name2, "can't be joined as-is. Consult quick start guide for details about data relationships."))
     } else {
       if(length(grep("recommended", c(nl1, nl2)))>0) {
         stop(paste("Joining tables", name1, "and", name2, "is not recommended. Consult quick start guide for details."))
