@@ -85,7 +85,8 @@ dupProcess <- function(data, data.dup, table) {
   # concatenate non-data fields with pipe separators
   # do it in both the original and the subset
   not.data <- c("rowid", "uid", colnames(data)[grep("emarks", colnames(data))], 
-                colnames(data)[grep("edBy", colnames(data))])
+                colnames(data)[grep("edBy", colnames(data))], 
+                colnames(data)[grep("dataEntryRecord", colnames(data))])
   # if data columns differ, duplicate can't be resolved
   if(nrow(unique(data.dup[,setdiff(colnames(data.dup), not.data)]))==nrow(data.dup)) {
     data <- data
