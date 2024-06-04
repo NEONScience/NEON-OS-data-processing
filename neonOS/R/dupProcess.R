@@ -9,6 +9,7 @@
 #'
 #' @param data A data frame containing original duplicated data. [data frame]
 #' @param data.dup A data frame containing lowercase conversion of the duplicated data. [character]
+#' @param table The table name for the input data frame
 
 #' @return A modified data frame with resolveable duplicates removed and a flag field added and populated.
 
@@ -22,7 +23,7 @@
 #   Claire Lunch (2024-06-03)
 ##############################################################################################
 
-dupProcess <- function(data, data.dup) {
+dupProcess <- function(data, data.dup, table) {
  
   # check for NA key values
   if(all(is.na(data.dup$keyvalue))) { # not quite right - keyvalue could be a bunch of concatenated NAs
@@ -32,29 +33,28 @@ dupProcess <- function(data, data.dup) {
   
   data$rowid <- as.numeric(data$rowid)
   
-  # # check for specific cases that can't be evaluated
-  # # table isn't passed through to this function (yet)
-  # # veg structure: multi-stem individuals with empty tempStemID
-  # if(table=="vst_apparentindividual") {
-  #   if(all(is.na(data.dup$tempStemID))) {
-  #     data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
-  #     return(data)
-  #   }
-  # }
-  # # mammals: uncertain grid point locations
-  # if(table=="mam_pertrapnight") {
-  #   if(any(grepl("X", data.dup$trapCoordinate))) {
-  #     data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
-  #     return(data)
-  #   }
-  #   # mammals: multiple untagged captures in one trap
-  #   if(any(grepl("4", data.dup$trapStatus))) {
-  #     if(length(which(is.na(data.dup$tagID)))>1) {
-  #       data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
-  #       return(data)
-  #     }
-  #   }
-  # }
+  # check for specific cases that can't be evaluated
+  # veg structure: multi-stem individuals with empty tempStemID
+  if(table=="vst_apparentindividual") {
+    if(all(is.na(data.dup$tempStemID))) {
+      data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
+      return(data)
+    }
+  }
+  # mammals: uncertain grid point locations
+  if(table=="mam_pertrapnight") {
+    if(any(grepl("X", data.dup$trapCoordinate))) {
+      data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
+      return(data)
+    }
+    # mammals: multiple untagged captures in one trap
+    if(any(grepl("4", data.dup$trapStatus))) {
+      if(length(which(is.na(data.dup$tagID)))>1) {
+        data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- -1
+        return(data)
+      }
+    }
+  }
   
   # assign a QF value of 1 in the original data
   data$duplicateRecordQF[which(data$keyvalue %in% data.dup$keyvalue)] <- 1

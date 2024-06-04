@@ -10,6 +10,7 @@
 #' @param data A data frame containing data from a NEON observational data table [data frame]
 #' @param variables The NEON variables file containing metadata about the data table in question [data frame]
 #' @param table The name of the table. Must match one of the table names in 'variables' [character]
+#' @param ncores The maximum number of cores to use for parallel processing. Defaults to 1. [numeric]
 
 #' @return A modified data frame with resolveable duplicates removed and a flag field added and populated.
 
@@ -34,7 +35,9 @@
 #   Sarah Elmendorf (2015-08-19)
 ##############################################################################################
 
-removeDups <- function(data, variables, table=NA_character_) {
+removeDups <- function(data, variables, 
+                       table=NA_character_,
+                       ncores=1) {
   
   if(is.na(table)) {
     table <- deparse(substitute(data))
@@ -170,6 +173,7 @@ removeDups <- function(data, variables, table=NA_character_) {
     # subset to only the records with duplicate values in the key fields
     data.sub <- data.low[union(which(duplicated(data.low[,key])),
                                         which(duplicated(data.low[,key], fromLast=T))),]
+    data.sub$rowid <- as.numeric(data.sub$rowid)
     
     # get subset without duplicate values
     data.nodups <- data[which(!data$rowid %in% data.sub$rowid),]
@@ -181,21 +185,12 @@ removeDups <- function(data, variables, table=NA_character_) {
     
     # set up parallel cores
     if(nrow(dup.keys)>=100) {
-      ncores <- max(1, parallel::detectCores()-2, na.rm=TRUE)
+      ncores <- min(ncores, parallel::detectCores()-2, na.rm=TRUE)
     } else {
       ncores <- 1
     }
     cl <- parallel::makeCluster(ncores)
     suppressWarnings(on.exit(parallel::stopCluster(cl)))
-    
-    # strategy: use the data.sub tables of matching values as the chunks. process them, put the table back together, and sort by rowid
-    # is this going to break because there will probably be more chunks than cores? kinda seems like it
-    # have to use multiple matching values as the chunks, and loop over the function as it is now
-    # add an ncores argument
-    # result <- parLapply(cl, chunks, function(chunk) {
-    #   modify_rows(chunk, df)
-    # })
-    # is this actually using the correct number of cores?
     
     # make data frame chunks of one key value each
     dup.list <- list(nrow(dup.keys))
@@ -217,12 +212,14 @@ removeDups <- function(data, variables, table=NA_character_) {
     }
     
     # de-dup each chunk
-    proc.data <- parallel::clusterMap(cl=cl, fun=dupProcess, data=data.list, data.dup=dup.list)
+    proc.data <- parallel::clusterMap(cl=cl, fun=dupProcess, data=data.list, 
+                                      data.dup=dup.list, table=table)
     
     # stack chunks and re-order
     data.d <- data.table::rbindlist(proc.data, fill=TRUE)
     data <- data.table::rbindlist(list(data.d, data.nodups), fill=TRUE)
     data <- data[order(data$rowid),]
+    data <- data.frame(data)
     
     # calculate de-dup numbers to report to user
     dupdiff <- sum(unlist(lapply(dup.list, FUN=nrow)) - unlist(lapply(proc.data, FUN=nrow)))
