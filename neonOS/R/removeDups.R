@@ -50,7 +50,7 @@ removeDups <- function(data, variables,
   # check for enough data to run
   if(nrow(data)==1) {
     data$duplicateRecordQF <- 0
-    warning("Only one row of data present.")
+    warning("Only one row of data present. duplicateRecordQF set to 0.")
     return(data)
   } else {
     if(nrow(data)==0) {
