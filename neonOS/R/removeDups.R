@@ -11,6 +11,7 @@
 #' @param variables The NEON variables file containing metadata about the data table in question [data frame]
 #' @param table The name of the table. Must match one of the table names in 'variables' [character]
 #' @param ncores The maximum number of cores to use for parallel processing. Defaults to 1. [numeric]
+#' @param flagOnly T/F: Run the function without attempting duplicate resolution, only apply flags. Defaults to FALSE. [logical]
 
 #' @return A modified data frame with resolveable duplicates removed and a flag field added and populated.
 
@@ -37,7 +38,8 @@
 
 removeDups <- function(data, variables, 
                        table=NA_character_,
-                       ncores=1) {
+                       ncores=1,
+                       flagOnly=FALSE) {
   
   if(is.na(table)) {
     table <- deparse(substitute(data))
@@ -67,7 +69,8 @@ removeDups <- function(data, variables,
   
   # exceptions for specific data tables
   if(table=="brd_countdata") {
-    stop("Duplicates cannot be unambiguously identified in brd_countdata. Multiple birds can be observed separately during the same observation minute, at the same distance.")
+    message("Duplicates cannot be unambiguously identified in brd_countdata. Multiple birds can be observed separately during the same observation minute, at the same distance. Because of this ambiguity, flagOnly has been set to TRUE and potential duplicates will be flagged but not resolved.")
+    flagOnly <- TRUE
   }
   if(table=="vst_apparentindividual") {
     if(min(data$date) <= as.POSIXct("2021-12-31", tz="GMT")) {
@@ -177,68 +180,83 @@ removeDups <- function(data, variables,
     
     # get subset without duplicate values
     data.nodups <- data[which(!data$rowid %in% data.sub$rowid),]
-    
-    # iterate over unique key values
     dup.keys <- cbind(unique(data.sub[,key]))
-    message(paste(nrow(dup.keys), "duplicated key values found, representing",
-        nrow(data.sub), "non-unique records. Attempting to resolve.", sep=" "))
     
-    # set up parallel cores
-    if(nrow(dup.keys)>=100) {
-      ncores <- min(ncores, parallel::detectCores()-2, na.rm=TRUE)
+    # in flag only mode, flag and be done. otherwise, attempt to resolve.
+    if(isTRUE(flagOnly)) {
+      data.d <- data[which(data$rowid %in% data.sub$rowid),]
+      data.d$duplicateRecordQF <- 2
+      message(paste(nrow(dup.keys), "duplicated key values found, representing",
+                    nrow(data.sub), "non-unique records. Records have been flagged.", sep=" "))
     } else {
-      ncores <- 1
-    }
-    cl <- parallel::makeCluster(ncores)
-    suppressWarnings(on.exit(parallel::stopCluster(cl)))
-    
-    # make data frame chunks of one key value each
-    dup.list <- list(nrow(dup.keys))
-    if(ncol(dup.keys)==1) {
-      for(i in 1:nrow(dup.keys)) {
-        dup.list[[i]] <- data.sub[which(data.sub[,key] == dup.keys[i]),]
+      
+      # iterate over unique key values
+      message(paste(nrow(dup.keys), "duplicated key values found, representing",
+                    nrow(data.sub), "non-unique records. Attempting to resolve.", sep=" "))
+      
+      # set up parallel cores
+      if(nrow(dup.keys)>=100) {
+        ncores <- min(ncores, parallel::detectCores()-2, na.rm=TRUE)
+      } else {
+        ncores <- 1
       }
-    } else {
-      for(i in 1:nrow(dup.keys)) {
-        dup.list[[i]] <- data.sub[which(do.call(paste0, data.sub[key]) == 
-                                     do.call(paste0, dup.keys)[i]),]
+      cl <- parallel::makeCluster(ncores)
+      suppressWarnings(on.exit(parallel::stopCluster(cl)))
+      
+      # make data frame chunks of one key value each
+      dup.list <- list(nrow(dup.keys))
+      if(ncol(dup.keys)==1) {
+        for(i in 1:nrow(dup.keys)) {
+          dup.list[[i]] <- data.sub[which(data.sub[,key] == dup.keys[i]),]
+        }
+      } else {
+        for(i in 1:nrow(dup.keys)) {
+          dup.list[[i]] <- data.sub[which(do.call(paste0, data.sub[key]) == 
+                                            do.call(paste0, dup.keys)[i]),]
+        }
       }
-    }
-
-    # make data frame chunks of one key value each from the original (mixed case) data
-    data.list <- list(nrow(dup.keys))
-    for(i in 1:nrow(dup.keys)) {
-       data.list[[i]] <- data[which(data$keyvalue %in% dup.list[[i]]$keyvalue),]
+      
+      # make data frame chunks of one key value each from the original (mixed case) data
+      data.list <- list(nrow(dup.keys))
+      for(i in 1:nrow(dup.keys)) {
+        data.list[[i]] <- data[which(data$keyvalue %in% dup.list[[i]]$keyvalue),]
+      }
+      
+      # de-dup each chunk
+      proc.data <- parallel::clusterMap(cl=cl, fun=dupProcess, data=data.list, 
+                                        data.dup=dup.list, table=table)
+      
+      # stack chunks
+      data.d <- data.table::rbindlist(proc.data, fill=TRUE)
+      
     }
     
-    # de-dup each chunk
-    proc.data <- parallel::clusterMap(cl=cl, fun=dupProcess, data=data.list, 
-                                      data.dup=dup.list, table=table)
-    
-    # stack chunks and re-order
-    data.d <- data.table::rbindlist(proc.data, fill=TRUE)
+    # merge with non-duplicates and re-order
     data <- data.table::rbindlist(list(data.d, data.nodups), fill=TRUE)
     data <- data[order(data$rowid),]
     data <- data.frame(data)
     
-    # calculate de-dup numbers to report to user
-    dupdiff <- sum(unlist(lapply(dup.list, FUN=nrow)) - unlist(lapply(proc.data, FUN=nrow)))
-    
-    if(nrow(unique(cbind(data.low[,key])))!=nrow(data.low)) {
-      message(paste(dupdiff, " resolveable duplicates merged into matching records\n", length(which(data$duplicateRecordQF==1)), 
-          " resolved records flagged with duplicateRecordQF=1", sep=""))
+    # report on de-duping results if de-duping was done
+    if(isFALSE(flagOnly)) {
+      
+      # calculate de-dup numbers to report to user
+      dupdiff <- sum(unlist(lapply(dup.list, FUN=nrow)) - unlist(lapply(proc.data, FUN=nrow)))
+      
+      if(nrow(unique(cbind(data.low[,key])))!=nrow(data.low)) {
+        message(paste(dupdiff, " resolveable duplicates merged into matching records\n", length(which(data$duplicateRecordQF==1)), 
+                      " resolved records flagged with duplicateRecordQF=1", sep=""))
+      }
+      
+      if(length(which(data$duplicateRecordQF==2))>0) {
+        message(paste(length(which(data$duplicateRecordQF==2)), 
+                      " unresolveable duplicates flagged with duplicateRecordQF=2", sep=""))
+      }
+      
+      if(length(which(data$duplicateRecordQF==-1))>0) {
+        message(paste(length(which(data$duplicateRecordQF==-1)), 
+                      " records could not be evaluated and are flagged with duplicateRecordQF=-1", sep=""))
+      }
     }
-    
-    if(length(which(data$duplicateRecordQF==2))>0) {
-      message(paste(length(which(data$duplicateRecordQF==2)), 
-          " unresolveable duplicates flagged with duplicateRecordQF=2", sep=""))
-    }
-    
-    if(length(which(data$duplicateRecordQF==-1))>0) {
-      message(paste(length(which(data$duplicateRecordQF==-1)), 
-          " records could not be evaluated and are flagged with duplicateRecordQF=-1", sep=""))
-    }
-    
   }
   
   # remove key value field and return data

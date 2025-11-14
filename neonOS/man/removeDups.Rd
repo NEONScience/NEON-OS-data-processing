@@ -4,7 +4,13 @@
 \alias{removeDups}
 \title{Remove duplicates from a data table based on a provided primary key; flag duplicates that can't be removed.}
 \usage{
-removeDups(data, variables, table = NA_character_, ncores = 1)
+removeDups(
+  data,
+  variables,
+  table = NA_character_,
+  ncores = 1,
+  flagOnly = FALSE
+)
 }
 \arguments{
 \item{data}{A data frame containing data from a NEON observational data table [data frame]}
@@ -14,6 +20,8 @@ removeDups(data, variables, table = NA_character_, ncores = 1)
 \item{table}{The name of the table. Must match one of the table names in 'variables' [character]}
 
 \item{ncores}{The maximum number of cores to use for parallel processing. Defaults to 1. [numeric]}
+
+\item{flagOnly}{T/F: Run the function without attempting duplicate resolution, only apply flags. Defaults to FALSE. [logical]}
 }
 \value{
 A modified data frame with resolveable duplicates removed and a flag field added and populated.
