@@ -22,7 +22,7 @@
 
 idSampleParents <- function(sampleUuid, token=NA_character_) {
   
-  req <- getAPI(paste("http://data.neonscience.org/api/v0/samples/view?sampleUuid=", 
+  req <- getAPI(paste("https://data.neonscience.org/api/v0/samples/view?sampleUuid=", 
                       sampleUuid, sep=""), token=token)
   
   samp <- jsonlite::fromJSON(httr::content(req, as="text", encoding="UTF-8"), simplifyVector=FALSE)

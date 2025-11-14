@@ -37,7 +37,7 @@ getSampleTree <- function(sampleNode, idType="tag",
   
   # if using tag, first check classes
   if(idType=="tag" & is.na(sampleClass)) {
-    req <- getAPI(paste("http://data.neonscience.org/api/v0/samples/classes?sampleTag=", 
+    req <- getAPI(paste("https://data.neonscience.org/api/v0/samples/classes?sampleTag=", 
                         sampleNode, sep=""), token=token)
     
     if(is.null(req)) {
@@ -62,19 +62,19 @@ getSampleTree <- function(sampleNode, idType="tag",
   }
   
   if(idType=="tag") {
-    req <- getAPI(paste("http://data.neonscience.org/api/v0/samples/view?sampleTag=", 
+    req <- getAPI(paste("https://data.neonscience.org/api/v0/samples/view?sampleTag=", 
                         sampleNode, "&sampleClass=", sampleClass, sep=""), token=token)
   } else {
     if(idType=="barcode") {
-      req <- getAPI(paste("http://data.neonscience.org/api/v0/samples/view?barcode=", 
+      req <- getAPI(paste("https://data.neonscience.org/api/v0/samples/view?barcode=", 
                           sampleNode, sep=""), token=token)
     } else {
       if(idType=="guid") {
-        req <- getAPI(paste("http://data.neonscience.org/api/v0/samples/view?archiveGuid=", 
+        req <- getAPI(paste("https://data.neonscience.org/api/v0/samples/view?archiveGuid=", 
                             sampleNode, sep=""), token=token)
       } else {
         if(idType=="uuid") {
-          req <- getAPI(paste("http://data.neonscience.org/api/v0/samples/view?sampleUuid=", 
+          req <- getAPI(paste("https://data.neonscience.org/api/v0/samples/view?sampleUuid=", 
                               sampleNode, sep=""), token=token)
         }
       }

@@ -40,7 +40,7 @@ getTaxonList <- function(
   token = NA
   ){
 
-  url_prefix = 'http://data.neonscience.org/api/v0/taxonomy?taxonTypeCode=' #hard code endpoint into function
+  url_prefix = 'https://data.neonscience.org/api/v0/taxonomy?taxonTypeCode=' #hard code endpoint into function
   url_to_get <- as.character(paste0(url_prefix, taxonType))
 
   url_to_get <- paste0(url_to_get,'&offset=0')

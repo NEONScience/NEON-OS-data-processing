@@ -1,7 +1,7 @@
 Package: neonOS
 Title: Basic Data Wrangling for NEON Observational Data
-Version: 1.1.0
-Date: 2024-06-14
+Version: 1.2.0.9000
+Date: 2025-11-13
 Authors@R: c(person("Claire","Lunch",email="clunch@battelleecology.org",role=c("aut","cre","ctb"),comment=c(ORCID="0000-0001-8753-6593")), person("Eric","Sokol",role=c("aut","ctb"),comment=c(ORCID="0000-0001-5923-0917")), person("Natalie","Robinson",role=c("aut","ctb"),comment=c(ORCID="0000-0002-1144-418X")), person("NEON (National Ecological Observatory Network)", role="aut"))
 Description: NEON observational data are provided via the NEON Data Portal <https://www.neonscience.org> 
   and NEON API, and can be downloaded and reformatted by the 'neonUtilities' package. NEON observational data 
