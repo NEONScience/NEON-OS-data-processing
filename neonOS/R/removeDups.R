@@ -185,7 +185,12 @@ removeDups <- function(data, variables,
     # in flag only mode, flag and be done. otherwise, attempt to resolve.
     if(isTRUE(flagOnly)) {
       data.d <- data[which(data$rowid %in% data.sub$rowid),]
-      data.d$duplicateRecordQF <- 2
+      if(ncol(dup.keys)==1) {
+        data.d$duplicateRecordQF <- data.sub[,key]
+      } else {
+        data.d$duplicateRecordQF <- apply(data.sub[,key], MARGIN=1, FUN=paste0, collapse=".")
+      }
+      
       message(paste(nrow(dup.keys), "duplicated key values found, representing",
                     nrow(data.sub), "non-unique records. Records have been flagged.", sep=" "))
     } else {
