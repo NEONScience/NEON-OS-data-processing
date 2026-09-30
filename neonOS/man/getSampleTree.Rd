@@ -18,7 +18,7 @@ getSampleTree(
 
 \item{sampleClass}{The NEON sampleClass of sampleNode. Required if sampleNode is a tag and there are multiple valid classes. [character]}
 
-\item{token}{User specific API token (generated within neon.datascience user accounts). Optional. [character]}
+\item{token}{User specific API token (generated within data.neonscience.org user accounts). Optional. [character]}
 }
 \value{
 A table of sample identifiers, their classes, and their parent samples.

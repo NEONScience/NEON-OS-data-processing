@@ -10,7 +10,7 @@
 #' @param sampleNode A NEON sample identifier. [character]
 #' @param idType Is sampleNode a tag, barcode, or guid? Defaults to tag. [character]
 #' @param sampleClass The NEON sampleClass of sampleNode. Required if sampleNode is a tag and there are multiple valid classes. [character]
-#' @param token User specific API token (generated within neon.datascience user accounts). Optional. [character]
+#' @param token User specific API token (generated within data.neonscience.org user accounts). Optional. [character]
 
 #' @return A table of sample identifiers, their classes, and their parent samples.
 #' 
