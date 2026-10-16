@@ -9,7 +9,8 @@ removeDups(
   variables,
   table = NA_character_,
   ncores = 1,
-  flagOnly = FALSE
+  flagOnly = FALSE,
+  flagWithKey = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ removeDups(
 \item{ncores}{The maximum number of cores to use for parallel processing. Defaults to 1. [numeric]}
 
 \item{flagOnly}{T/F: Run the function without attempting duplicate resolution, only apply flags. Defaults to FALSE. [logical]}
+
+\item{flagWithKey}{T/F: Copy the concatenated values of the key fields into the flag field, rather than flagging with -1, 1, or 2. Only used if flagOnly=TRUE. Defaults to FALSE. [logical]}
 }
 \value{
 A modified data frame with resolveable duplicates removed and a flag field added and populated.

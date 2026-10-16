@@ -12,6 +12,7 @@
 #' @param table The name of the table. Must match one of the table names in 'variables' [character]
 #' @param ncores The maximum number of cores to use for parallel processing. Defaults to 1. [numeric]
 #' @param flagOnly T/F: Run the function without attempting duplicate resolution, only apply flags. Defaults to FALSE. [logical]
+#' @param flagWithKey T/F: Copy the concatenated values of the key fields into the flag field, rather than flagging with -1, 1, or 2. Only used if flagOnly=TRUE. Defaults to FALSE. [logical]
 
 #' @return A modified data frame with resolveable duplicates removed and a flag field added and populated.
 
@@ -39,7 +40,8 @@
 removeDups <- function(data, variables, 
                        table=NA_character_,
                        ncores=1,
-                       flagOnly=FALSE) {
+                       flagOnly=FALSE,
+                       flagWithKey=FALSE) {
   
   if(is.na(table)) {
     table <- deparse(substitute(data))
@@ -73,7 +75,7 @@ removeDups <- function(data, variables,
     flagOnly <- TRUE
   }
   if(table=="vst_apparentindividual") {
-    if(min(data$date) <= as.POSIXct("2021-12-31", tz="GMT")) {
+    if(min(data$date) <= as.POSIXct("2021-12-31")) {
       message("In vst_apparentindividual, tempStemID indicates different stems of a multi-stem individual. This temporary ID was rolled out during the 2019-2021 field seasons. In data collected prior to its implementation, multi-stem individuals cannot be distiguished from duplicates, and are flagged with -1, meaning could not be evaluated.")
     }
   }
@@ -141,13 +143,8 @@ removeDups <- function(data, variables,
   # Initiate duplicateRecordQF field at 0
   data$duplicateRecordQF <- 0
   
-  # convert key fields to character (is this needed?)
-  if(length(key)>1) {
-    data[,which(names(data) %in% key)] <- lapply(data[,which(names(data) %in% key)],
-                                                         function (x) as.character(x))
-  } else {
-    data[,which(names(data) %in% key)] <- as.character(data[,which(names(data) %in% key)])
-  }
+  # make identifier that isn't uid (since uids of duplicates will be concatenated)
+  data$rowid <- 1:nrow(data)
   
   # make key value field
   if(length(key)==1) {
@@ -156,12 +153,17 @@ removeDups <- function(data, variables,
     data$keyvalue <- tolower(do.call(paste0, data[key]))
   }
   
-  # make identifier that isn't uid (since uids of duplicates will be concatenated)
-  data$rowid <- 1:nrow(data)
-  
   # convert all data to lowercase for comparison purposes
   data.low <- apply(data, 2, tolower)
   data.low <- data.frame(data.low, stringsAsFactors=F)
+  
+  # convert key fields to character (is this needed?)
+  if(length(key)>1) {
+    data.low[,which(names(data.low) %in% key)] <- lapply(data.low[,which(names(data.low) %in% key)],
+                                                         function (x) as.character(x))
+  } else {
+    data.low[,which(names(data.low) %in% key)] <- as.character(data.low[,which(names(data.low) %in% key)])
+  }
   
   # convert any empty strings to NAs
   data.low[data.low==""] <- NA
@@ -185,10 +187,14 @@ removeDups <- function(data, variables,
     # in flag only mode, flag and be done. otherwise, attempt to resolve.
     if(isTRUE(flagOnly)) {
       data.d <- data[which(data$rowid %in% data.sub$rowid),]
-      if(ncol(dup.keys)==1) {
-        data.d$duplicateRecordQF <- data.sub[,key]
+      if(isTRUE(flagWithKey)) {
+        if(ncol(dup.keys)==1) {
+          data.d$duplicateRecordQF <- data.sub[,key]
+        } else {
+          data.d$duplicateRecordQF <- apply(data.sub[,key], MARGIN=1, FUN=paste0, collapse=".")
+        }
       } else {
-        data.d$duplicateRecordQF <- apply(data.sub[,key], MARGIN=1, FUN=paste0, collapse=".")
+        data.d$duplicateRecordQF <- 2
       }
       
       message(paste(nrow(dup.keys), "duplicated key values found, representing",
