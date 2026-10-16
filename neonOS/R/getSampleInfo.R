@@ -36,7 +36,8 @@ getSampleInfo <- function(sampleNode, idType="tag",
   # if using tag, first check classes
   if(idType=="tag" & is.na(sampleClass)) {
     req <- getAPI(paste(nu.globals$baseurl, "samples/classes?sampleTag=", 
-                        sampleNode, sep=""), token=token)
+                        utils::URLencode(sampleNode, reserved=TRUE), sep=""), 
+                  token=token)
     
     if(is.null(req)) {
       return(invisible())
@@ -61,7 +62,9 @@ getSampleInfo <- function(sampleNode, idType="tag",
   
   if(idType=="tag") {
     req <- getAPI(paste(nu.globals$baseurl, "samples/view?sampleTag=", 
-                        sampleNode, "&sampleClass=", sampleClass, sep=""), token=token)
+                        utils::URLencode(sampleNode, reserved=TRUE), 
+                        "&sampleClass=", sampleClass, sep=""), 
+                  token=token)
   } else {
     if(idType=="barcode") {
       req <- getAPI(paste(nu.globals$baseurl, "samples/view?barcode=", 
