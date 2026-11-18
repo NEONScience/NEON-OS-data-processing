@@ -73,8 +73,34 @@ getTaxonBackbone <- function(
     taxB <- taxonData
   }
   
+  # get taxon list for the type
   taxonList <- utils::read.csv(unique(taxB$taxonomyUrl))
-  taxonLocation
   
-  return(taxa_table)
+  # get taxon location table matching sites requested, if location data are requested
+  if(isTRUE(locations)) {
+    if(all(site=="all")) {
+      taxL <- unique(taxB$taxonomyLocationUrl)
+    } else {
+      taxSite <- taxB[which(taxB$siteID %in% site),]
+      taxL <- unique(taxSite$taxonomyLocationUrl)
+    }
+    
+    if(length(taxL)==0) {
+      stop(paste("No taxon location data found for taxon type", 
+                 taxonType, "and sites", paste(site, collapse=" "), sep=" "))
+    }
+    
+    if(length(taxL)==1) {
+      taxonLocation <- utils::read.csv(taxL)
+    } else {
+      listLocF <- list()
+      for(i in 1:length(taxL)) {
+        listLocF[[i]] <- utils::read.csv(taxL[i])
+      }
+      taxonLocation <- data.table::rbindlist(listLocF, fill=TRUE)
+    }
+    return(list(taxonList=taxonList, taxonLocation=taxonLocation))
+  } else {
+    return(taxonList)
+  }
 }
