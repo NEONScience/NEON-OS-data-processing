@@ -2,6 +2,7 @@
 
 export(getSampleInfo)
 export(getSampleTree)
+export(getTaxonBackbone)
 export(getTaxonList)
 export(joinTableNEON)
 export(removeDups)
