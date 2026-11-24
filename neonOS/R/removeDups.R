@@ -69,6 +69,13 @@ removeDups <- function(data, variables,
     stop(paste("Table name", table, "does not match any table in variables file."))
   }
   
+  # check for valid use of flagWithKey
+  if(isTRUE(flagWithKey)) {
+    if(isFALSE(flagOnly)) {
+      stop("flagWithKey=T can only be used if flagOnly=T.")
+    }
+  }
+  
   # exceptions for specific data tables
   if(table=="brd_countdata") {
     message("Duplicates cannot be unambiguously identified in brd_countdata. Multiple birds can be observed separately during the same observation minute, at the same distance. Because of this ambiguity, flagOnly has been set to TRUE and potential duplicates will be flagged but not resolved.")
