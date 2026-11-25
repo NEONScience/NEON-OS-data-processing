@@ -97,7 +97,7 @@ getSampleProducts <- function(sampleNode,
     sampTables <- sampFoc$data$sampleViews$sampleEvents[[1]]$ingestTableName
     sampTables <- unique(sampTables)
     
-    tabrel <- utils::read.csv("")
+    tabrel <- utils::read.csv("https://raw.githubusercontent.com/NEONScience/NEON-OS-data-processing/refs/heads/main/helper_files/table_relationships.csv")
     
     out <- character()
     for(i in 1:length(sampTables)) {
