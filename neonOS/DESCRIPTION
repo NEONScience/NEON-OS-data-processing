@@ -10,7 +10,7 @@ Description: NEON observational data are provided via the NEON Data Portal <http
   tools for performing common operations on NEON observational data, including checking for duplicates and 
   joining tables.
 Depends: R (>= 4.2)
-Imports: utils, data.table, httr, curl, jsonlite
+Imports: utils, data.table, httr, jsonlite
 Suggests: testthat, neonUtilities, tidyr
 License: AGPL-3
 URL: https://github.com/NEONScience/NEON-OS-data-processing
